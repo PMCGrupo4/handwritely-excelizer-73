@@ -1,8 +1,15 @@
 
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const CTASection = () => {
+  const handleStartFreeTrial = () => {
+    // You should replace this URL with the actual URL of your demo app
+    // For local development, it might be something like:
+    window.location.href = "http://localhost:3000";
+  };
+
   return (
     <section id="pricing" className="py-24 relative overflow-hidden">
       <div className="gradient-blur bottom-20 left-[20%]" />
@@ -59,7 +66,10 @@ const CTASection = () => {
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <button className="inline-flex h-12 px-8 items-center justify-center rounded-full bg-white text-primary font-medium transition-all hover:bg-white/90 active:scale-95">
+                <button 
+                  onClick={handleStartFreeTrial}
+                  className="inline-flex h-12 px-8 items-center justify-center rounded-full bg-white text-primary font-medium transition-all hover:bg-white/90 active:scale-95"
+                >
                   Start Free Trial
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </button>
