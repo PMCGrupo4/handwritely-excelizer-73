@@ -1,12 +1,12 @@
-
 import React, { useState, useRef } from 'react';
 import { Camera, FileImage, FileSpreadsheet, ArrowLeft, Plus, Download, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { createWorker } from 'tesseract.js';
+import * as XLSX from 'xlsx';
 
-// Define the structure for our command data
 interface CommandItem {
   id: string;
   imageSrc: string;
@@ -28,6 +28,7 @@ const Demo = () => {
   const [commands, setCommands] = useState<CommandItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Maneja la subida de imágenes
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -39,32 +40,94 @@ const Demo = () => {
     }
   };
 
+  // Activa el input de archivo para la cámara
   const handleCameraCapture = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
-  // Generate random data for our excel preview (in real app, this would come from OCR/AI processing)
-  const generateSampleData = (): CommandTableRow[] => {
-    const products = ["Café Americano", "Latte", "Capuchino", "Espresso", "Té Verde", "Pastel", "Sandwich"];
-    const rowCount = Math.floor(Math.random() * 5) + 2; // Between 2-6 items
-    
-    return Array.from({ length: rowCount }, (_, i) => {
-      const producto = products[Math.floor(Math.random() * products.length)];
-      const cantidad = Math.floor(Math.random() * 3) + 1;
-      const precio = Math.floor(Math.random() * 50) + 30;
-      return {
-        id: `item-${Date.now()}-${i}`,
-        producto,
-        cantidad,
-        precio,
-        total: cantidad * precio
-      };
-    });
+  // Procesa el texto del OCR para extraer productos, cantidades y precios
+  const parseCommandText = (text: string): CommandTableRow[] => {
+    return text
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .map((line, index) => {
+        // Normaliza espacios y caracteres especiales
+        const cleanLine = line
+          .replace(/[^\d\s.a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        const parts = cleanLine.split(' ');
+        
+        // Intenta detectar cantidades y precios
+        const numbers = parts.filter(part => !isNaN(Number(part)))
+                            .map(num => Number(num));
+
+        // Caso 1: "Producto Cantidad Precio" (ej: "Café 2 1500")
+        if (numbers.length >= 2) {
+          const precio = numbers.pop() || 0;
+          const cantidad = numbers.pop() || 1;
+          const producto = parts.slice(0, parts.length - numbers.length - 2).join(' ');
+          return {
+            id: `item-${Date.now()}-${index}`,
+            producto,
+            cantidad,
+            precio,
+            total: cantidad * precio
+          };
+        }
+        // Caso 2: "Producto Precio" (ej: "Agua 500")
+        else if (numbers.length === 1) {
+          const precio = numbers[0];
+          const producto = parts.slice(0, parts.length - 1).join(' ');
+          return {
+            id: `item-${Date.now()}-${index}`,
+            producto,
+            cantidad: 1,
+            precio,
+            total: precio
+          };
+        }
+        // Caso 3: Solo texto (ej: "Jugo natural")
+        else {
+          return {
+            id: `item-${Date.now()}-${index}`,
+            producto: line,
+            cantidad: 1,
+            precio: 0,
+            total: 0
+          };
+        }
+      });
   };
 
-  const addCommandToPreview = () => {
+  // Procesa la imagen con Tesseract.js
+  const processImageWithOCR = async (imageSrc: string): Promise<CommandTableRow[]> => {
+    setIsProcessing(true);
+    const worker = await createWorker('spa');
+    
+    try {
+      const { data } = await worker.recognize(imageSrc);
+      await worker.terminate();
+      return parseCommandText(data.text);
+    } catch (error) {
+      console.error("Error en OCR:", error);
+      toast({
+        title: "Error de procesamiento",
+        description: "No se pudo leer la comanda. Asegúrate de que la imagen sea clara y esté bien enfocada.",
+        variant: "destructive",
+      });
+      return [];
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Agrega una comanda procesada al listado
+  const addCommandToPreview = async () => {
     if (!uploadedImage) {
       toast({
         title: "Imagen requerida",
@@ -74,28 +137,26 @@ const Demo = () => {
       return;
     }
 
-    setIsProcessing(true);
+    const items = await processImageWithOCR(uploadedImage);
+    if (items.length === 0) return;
+
+    const newCommand: CommandItem = {
+      id: `cmd-${Date.now()}`,
+      imageSrc: uploadedImage,
+      timestamp: new Date().toLocaleString('es-ES'),
+      items
+    };
     
-    // Simulate processing delay
-    setTimeout(() => {
-      const newCommand: CommandItem = {
-        id: `cmd-${Date.now()}`,
-        imageSrc: uploadedImage,
-        timestamp: new Date().toLocaleString('es-ES'),
-        items: generateSampleData()
-      };
-      
-      setCommands(prev => [...prev, newCommand]);
-      setUploadedImage(null);
-      setIsProcessing(false);
-      
-      toast({
-        title: "¡Procesado con éxito!",
-        description: "La comanda ha sido agregada a la vista previa.",
-      });
-    }, 1500);
+    setCommands(prev => [...prev, newCommand]);
+    setUploadedImage(null);
+    
+    toast({
+      title: "¡Comanda agregada!",
+      description: "Los datos detectados se muestran en la vista previa.",
+    });
   };
 
+  // Elimina una comanda del listado
   const removeCommand = (id: string) => {
     setCommands(prev => prev.filter(cmd => cmd.id !== id));
     toast({
@@ -104,6 +165,7 @@ const Demo = () => {
     });
   };
 
+  // Genera y descarga el archivo Excel
   const handleGenerateExcel = () => {
     if (commands.length === 0) {
       toast({
@@ -114,28 +176,32 @@ const Demo = () => {
       return;
     }
 
-    setIsProcessing(true);
+    // Prepara los datos para Excel
+    const excelData = commands.flatMap(cmd => 
+      cmd.items.map(item => ({
+        "Producto": item.producto,
+        "Cantidad": item.cantidad,
+        "Precio Unitario": `$${item.precio.toLocaleString('es-ES')}`,
+        "Total": `$${item.total.toLocaleString('es-ES')}`,
+        "Fecha": cmd.timestamp
+      }))
+    );
+
+    // Crea el libro de Excel
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Comandas");
     
-    // Simulate processing
-    setTimeout(() => {
-      setIsProcessing(false);
-      toast({
-        title: "¡Éxito!",
-        description: "Archivo Excel generado correctamente. Descargando...",
-      });
-      
-      // In a real implementation, here you would generate and download the Excel file
-      // For now, we'll just log to console
-      console.log("Generating Excel with data:", commands);
-      
-      // Simulate download after a brief delay
-      setTimeout(() => {
-        console.log("Excel file downloaded");
-      }, 1000);
-    }, 1500);
+    // Descarga el archivo
+    XLSX.writeFile(wb, `comandas_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    toast({
+      title: "¡Excel descargado!",
+      description: "El archivo se ha guardado en tu dispositivo.",
+    });
   };
 
-  // Calculate totals for all commands
+  // Calcula los totales generales
   const calculateTotals = () => {
     let totalItems = 0;
     let totalAmount = 0;
@@ -181,13 +247,12 @@ const Demo = () => {
         </div>
 
         <div className="grid md:grid-cols-5 gap-8">
-          {/* Upload Section - Left Panel */}
+          {/* Panel izquierdo - Subida de imágenes */}
           <div className="md:col-span-2 space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-6 border">
               <h2 className="text-xl font-semibold mb-4">Subir Comanda</h2>
               
               <div className="space-y-4">
-                {/* Hidden file input for image upload */}
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -197,7 +262,6 @@ const Demo = () => {
                   capture="environment"
                 />
                 
-                {/* Upload/Camera Buttons */}
                 <Button 
                   onClick={() => fileInputRef.current?.click()} 
                   className="w-full flex items-center justify-center gap-2 h-12"
@@ -219,15 +283,14 @@ const Demo = () => {
               <div className="mt-6">
                 <h3 className="text-sm font-medium text-muted-foreground mb-2">Consejos para mejores resultados:</h3>
                 <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
-                  <li>Asegúrate de que la comanda esté bien iluminada</li>
-                  <li>Evita sombras o reflejos en la imagen</li>
-                  <li>Mantén la comanda plana y sin dobleces</li>
-                  <li>Encuadra toda la comanda en la foto</li>
+                  <li>Escribe cada producto en una línea nueva</li>
+                  <li>Formato recomendado: "Producto Cantidad Precio"</li>
+                  <li>Ejemplo: "Café con leche 2 1800"</li>
                 </ul>
               </div>
             </div>
 
-            {/* Process and Generate Excel Buttons */}
+            {/* Botones de acción */}
             <div className="space-y-4">
               <Button 
                 onClick={addCommandToPreview}
@@ -268,7 +331,7 @@ const Demo = () => {
             </div>
           </div>
 
-          {/* Preview Section - Right Panel */}
+          {/* Panel derecho - Vista previa */}
           <div className="md:col-span-3">
             <div className="bg-white rounded-xl shadow-sm p-6 border h-full flex flex-col">
               <h2 className="text-xl font-semibold mb-4">Vista Previa Excel</h2>
@@ -312,10 +375,10 @@ const Demo = () => {
                           {commands.flatMap(cmd => 
                             cmd.items.map(item => (
                               <TableRow key={item.id}>
-                                <TableCell>{item.producto}</TableCell>
+                                <TableCell className="font-medium">{item.producto}</TableCell>
                                 <TableCell className="text-right">{item.cantidad}</TableCell>
-                                <TableCell className="text-right">${item.precio}</TableCell>
-                                <TableCell className="text-right">${item.total}</TableCell>
+                                <TableCell className="text-right">${item.precio.toLocaleString('es-ES')}</TableCell>
+                                <TableCell className="text-right">${item.total.toLocaleString('es-ES')}</TableCell>
                               </TableRow>
                             ))
                           )}
@@ -329,7 +392,7 @@ const Demo = () => {
                         <p className="text-sm text-muted-foreground">Productos totales: <span className="font-semibold">{totalItems}</span></p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Total: <span className="font-semibold">${totalAmount}</span></p>
+                        <p className="text-sm text-muted-foreground">Total: <span className="font-semibold">${totalAmount.toLocaleString('es-ES')}</span></p>
                       </div>
                     </div>
                     
