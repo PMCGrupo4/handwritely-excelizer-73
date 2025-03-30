@@ -5,9 +5,8 @@ import { Button } from '@/components/ui/button';
 
 const CTASection = () => {
   const handleStartFreeTrial = () => {
-    // You should replace this URL with the actual URL of your demo app
-    // For local development, it might be something like:
-    window.location.href = "http://localhost:3000";
+    // Redirect to the demo app running locally
+    window.location.href = "http://localhost:8081/";
   };
 
   return (
@@ -66,16 +65,19 @@ const CTASection = () => {
               </div>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <button 
+                <Button 
                   onClick={handleStartFreeTrial}
                   className="inline-flex h-12 px-8 items-center justify-center rounded-full bg-white text-primary font-medium transition-all hover:bg-white/90 active:scale-95"
                 >
                   Start Free Trial
                   <ArrowRight className="ml-2 h-5 w-5" />
-                </button>
-                <button className="inline-flex h-12 px-8 items-center justify-center rounded-full bg-primary/20 text-white font-medium border border-white/30 transition-all hover:bg-primary/30 active:scale-95">
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="inline-flex h-12 px-8 items-center justify-center rounded-full bg-primary/20 text-white font-medium border border-white/30 transition-all hover:bg-primary/30 active:scale-95"
+                >
                   View Pricing
-                </button>
+                </Button>
               </div>
             </div>
             
