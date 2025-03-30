@@ -1,7 +1,7 @@
 
 /**
- * Utility function to redirect to the HandSheet demo app
+ * Utility function to redirect to the HandSheet demo page
  */
 export const redirectToDemoApp = () => {
-  window.location.href = "http://localhost:8081/";
+  window.location.href = "/demo";
 };
