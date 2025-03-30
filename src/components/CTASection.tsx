@@ -1,12 +1,12 @@
-
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { redirectToDemoApp } from '@/utils/navigation';
 
 const CTASection = () => {
   const handleStartFreeTrial = () => {
     // Redirect to the demo app running locally
-    window.location.href = "http://localhost:8081/";
+    redirectToDemoApp();
   };
 
   return (
@@ -115,7 +115,7 @@ const CTASection = () => {
                 ))}
               </div>
               
-              <button className="w-full h-12 rounded-full bg-white text-primary font-medium transition-all hover:bg-white/90 active:scale-95">
+              <button className="w-full h-12 rounded-full bg-white text-primary font-medium transition-all hover:bg-white/90 active:scale-95" onClick={redirectToDemoApp}>
                 Get Started
               </button>
             </div>

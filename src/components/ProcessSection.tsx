@@ -1,7 +1,8 @@
-
 import React from 'react';
 import { FileSpreadsheet, Pen, ScanText, CloudUpload, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { redirectToDemoApp } from '@/utils/navigation';
+import { Button } from '@/components/ui/button';
 
 const processSteps = [
   {
@@ -90,9 +91,12 @@ const ProcessSection = () => {
         </div>
         
         <div className="mt-20 text-center">
-          <button className="inline-flex h-12 px-8 items-center justify-center rounded-full bg-primary text-white font-medium transition-all hover:bg-primary/90 active:scale-95 animate-fade-up">
+          <Button 
+            onClick={redirectToDemoApp}
+            className="inline-flex h-12 px-8 items-center justify-center rounded-full bg-primary text-white font-medium transition-all hover:bg-primary/90 active:scale-95 animate-fade-up"
+          >
             Try HandSheet Now
-          </button>
+          </Button>
           <p className="text-muted-foreground mt-4 text-sm animate-fade-up" style={{ animationDelay: '100ms' }}>
             No credit card required. Start converting your handwritten notes today.
           </p>

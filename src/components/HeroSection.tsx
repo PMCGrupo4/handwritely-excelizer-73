@@ -2,6 +2,8 @@
 import React from 'react';
 import { ArrowRight, FileSpreadsheet, Pen, ScanText } from 'lucide-react';
 import AnimatedImage from './AnimatedImage';
+import { redirectToDemoApp } from '@/utils/navigation';
+import { Button } from '@/components/ui/button';
 
 const HeroSection = () => {
   return (
@@ -26,10 +28,13 @@ const HeroSection = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 animate-fade-up" style={{ animationDelay: '200ms' }}>
-            <button className="inline-flex h-12 px-8 items-center justify-center rounded-full bg-primary text-white font-medium transition-all hover:bg-primary/90 active:scale-95">
+            <Button 
+              onClick={redirectToDemoApp}
+              className="inline-flex h-12 px-8 items-center justify-center rounded-full bg-primary text-white font-medium transition-all hover:bg-primary/90 active:scale-95"
+            >
               Start Free Trial
               <ArrowRight className="ml-2 h-5 w-5" />
-            </button>
+            </Button>
             <button className="inline-flex h-12 px-8 items-center justify-center rounded-full bg-secondary text-primary font-medium transition-all hover:bg-secondary/80 active:scale-95">
               Watch Demo
             </button>

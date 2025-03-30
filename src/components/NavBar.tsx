@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { redirectToDemoApp } from '@/utils/navigation';
+import { Button } from '@/components/ui/button';
 
 const NavBar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -41,9 +43,12 @@ const NavBar = () => {
         </div>
 
         <div>
-          <button className="hidden md:inline-flex h-10 px-5 py-2 bg-primary text-white rounded-full text-sm font-medium transition-all hover:bg-primary/90 active:scale-95">
+          <Button 
+            onClick={redirectToDemoApp}
+            className="hidden md:inline-flex h-10 px-5 py-2 bg-primary text-white rounded-full text-sm font-medium transition-all hover:bg-primary/90 active:scale-95"
+          >
             Try for Free
-          </button>
+          </Button>
           <button className="md:hidden text-foreground">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
