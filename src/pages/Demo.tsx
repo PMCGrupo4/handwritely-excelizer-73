@@ -52,55 +52,41 @@ const Demo = () => {
     return text
       .split('\n')
       .map(line => line.trim())
-      .filter(line => line.length > 0)
+      .filter(line => line.length > 2) // Ignora líneas muy cortas
       .map((line, index) => {
-        // Normaliza espacios y caracteres especiales
-        const cleanLine = line
-          .replace(/[^\d\s.a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '')
-          .replace(/\s+/g, ' ')
+        // Extrae números (incluye decimales y comas)
+        const numbers = line.match(/(\d+[.,]?\d*)/g)?.map(num => 
+          parseFloat(num.replace(',', '.'))
+        ) || [];
+
+        // Extrae el nombre del producto (elimina números y símbolos)
+        const producto = line
+          .replace(/(\d+[.,]?\d*)/g, '')  // Elimina números
+          .replace(/[^\w\sáéíóúÁÉÍÓÚñÑ]/g, '') // Elimina símbolos
+          .replace(/\s+/g, ' ') // Normaliza espacios
           .trim();
 
-        const parts = cleanLine.split(' ');
+        // Determina cantidad y precio
+        let cantidad = 1;
+        let precio = 0;
         
-        // Intenta detectar cantidades y precios
-        const numbers = parts.filter(part => !isNaN(Number(part)))
-                            .map(num => Number(num));
-
-        // Caso 1: "Producto Cantidad Precio" (ej: "Café 2 1500")
         if (numbers.length >= 2) {
-          const precio = numbers.pop() || 0;
-          const cantidad = numbers.pop() || 1;
-          const producto = parts.slice(0, parts.length - numbers.length - 2).join(' ');
-          return {
-            id: `item-${Date.now()}-${index}`,
-            producto,
-            cantidad,
-            precio,
-            total: cantidad * precio
-          };
-        }
-        // Caso 2: "Producto Precio" (ej: "Agua 500")
+          // Si hay 2+ números: [cantidad, precio]
+          cantidad = numbers[0];
+          precio = numbers[1];
+        } 
         else if (numbers.length === 1) {
-          const precio = numbers[0];
-          const producto = parts.slice(0, parts.length - 1).join(' ');
-          return {
-            id: `item-${Date.now()}-${index}`,
-            producto,
-            cantidad: 1,
-            precio,
-            total: precio
-          };
+          // Si solo hay un número: asume que es precio (cantidad=1)
+          precio = numbers[0];
         }
-        // Caso 3: Solo texto (ej: "Jugo natural")
-        else {
-          return {
-            id: `item-${Date.now()}-${index}`,
-            producto: line,
-            cantidad: 1,
-            precio: 0,
-            total: 0
-          };
-        }
+
+        return {
+          id: `item-${Date.now()}-${index}`,
+          producto: producto || `Producto ${index + 1}`,
+          cantidad,
+          precio,
+          total: cantidad * precio
+        };
       });
   };
 
@@ -111,13 +97,14 @@ const Demo = () => {
     
     try {
       const { data } = await worker.recognize(imageSrc);
+      console.log("Texto detectado por OCR:", data.text); // Debug
       await worker.terminate();
       return parseCommandText(data.text);
     } catch (error) {
       console.error("Error en OCR:", error);
       toast({
         title: "Error de procesamiento",
-        description: "No se pudo leer la comanda. Asegúrate de que la imagen sea clara y esté bien enfocada.",
+        description: "No se pudo leer la comanda. Verifica que la imagen sea clara y el texto esté legible.",
         variant: "destructive",
       });
       return [];
@@ -152,7 +139,7 @@ const Demo = () => {
     
     toast({
       title: "¡Comanda agregada!",
-      description: "Los datos detectados se muestran en la vista previa.",
+      description: "Revisa que los datos detectados sean correctos.",
     });
   };
 
@@ -170,7 +157,7 @@ const Demo = () => {
     if (commands.length === 0) {
       toast({
         title: "Sin datos",
-        description: "Agrega al menos una comanda a la vista previa antes de generar el Excel.",
+        description: "Agrega al menos una comanda a la vista previa.",
         variant: "destructive",
       });
       return;
@@ -181,8 +168,8 @@ const Demo = () => {
       cmd.items.map(item => ({
         "Producto": item.producto,
         "Cantidad": item.cantidad,
-        "Precio Unitario": `$${item.precio.toLocaleString('es-ES')}`,
-        "Total": `$${item.total.toLocaleString('es-ES')}`,
+        "Precio Unitario": item.precio,
+        "Total": item.total,
         "Fecha": cmd.timestamp
       }))
     );
@@ -192,12 +179,13 @@ const Demo = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Comandas");
     
-    // Descarga el archivo
-    XLSX.writeFile(wb, `comandas_${new Date().toISOString().split('T')[0]}.xlsx`);
+    // Descarga el archivo (formato: "comandas_YYYY-MM-DD.xlsx")
+    const fileName = `comandas_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
     
     toast({
       title: "¡Excel descargado!",
-      description: "El archivo se ha guardado en tu dispositivo.",
+      description: `Archivo "${fileName}" guardado.`,
     });
   };
 
@@ -232,17 +220,17 @@ const Demo = () => {
               <span className="font-display text-xl font-medium">HandSheet</span>
             </div>
           </Link>
-          <div className="text-sm text-muted-foreground">Demostración</div>
+          <div className="text-sm text-muted-foreground">Procesamiento de comandas</div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="text-center mb-10">
           <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight mb-4">
-            Convierte tu Comanda a Excel
+            Convierte comandas a Excel
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Sube o toma una foto de tu comanda y conviértela en un archivo Excel en segundos
+            Toma una foto o sube una imagen de tu comanda para generar un Excel automáticamente
           </p>
         </div>
 
@@ -250,7 +238,7 @@ const Demo = () => {
           {/* Panel izquierdo - Subida de imágenes */}
           <div className="md:col-span-2 space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-6 border">
-              <h2 className="text-xl font-semibold mb-4">Subir Comanda</h2>
+              <h2 className="text-xl font-semibold mb-4">Captura la comanda</h2>
               
               <div className="space-y-4">
                 <input
@@ -267,7 +255,7 @@ const Demo = () => {
                   className="w-full flex items-center justify-center gap-2 h-12"
                 >
                   <FileImage className="h-5 w-5" />
-                  Subir Imagen
+                  Subir imagen
                 </Button>
                 
                 <Button 
@@ -276,17 +264,17 @@ const Demo = () => {
                   className="w-full flex items-center justify-center gap-2 h-12"
                 >
                   <Camera className="h-5 w-5" />
-                  Tomar Foto
+                  Usar cámara
                 </Button>
               </div>
               
               <div className="mt-6">
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">Consejos para mejores resultados:</h3>
-                <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
-                  <li>Escribe cada producto en una línea nueva</li>
-                  <li>Formato recomendado: "Producto Cantidad Precio"</li>
-                  <li>Ejemplo: "Café con leche 2 1800"</li>
-                </ul>
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">Formato recomendado:</h3>
+                <div className="text-sm bg-gray-50 p-3 rounded-md">
+                  <p className="font-mono">Café latte 2 1800</p>
+                  <p className="font-mono">Sandwich jamón 1 1200</p>
+                  <p className="font-mono">Agua mineral 3 800</p>
+                </div>
               </div>
             </div>
 
@@ -306,7 +294,7 @@ const Demo = () => {
                 ) : (
                   <>
                     <Plus className="h-5 w-5 mr-2" />
-                    Agregar a Excel
+                    Agregar comanda
                   </>
                 )}
               </Button>
@@ -324,7 +312,7 @@ const Demo = () => {
                 ) : (
                   <>
                     <Download className="h-5 w-5 mr-2" />
-                    Descargar Excel
+                    Descargar Excel ({commands.length})
                   </>
                 )}
               </Button>
@@ -334,18 +322,18 @@ const Demo = () => {
           {/* Panel derecho - Vista previa */}
           <div className="md:col-span-3">
             <div className="bg-white rounded-xl shadow-sm p-6 border h-full flex flex-col">
-              <h2 className="text-xl font-semibold mb-4">Vista Previa Excel</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Vista previa</h2>
+                <div className="text-sm text-muted-foreground">
+                  Total: <span className="font-semibold">${totalAmount.toLocaleString('es-ES')}</span>
+                </div>
+              </div>
               
               <div className="flex-grow overflow-auto">
                 {uploadedImage && (
                   <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-                    <h3 className="text-sm font-medium mb-2">Imagen Actual</h3>
-                    <img 
-                      src={uploadedImage} 
-                      alt="Vista previa de la comanda" 
-                      className="max-h-[200px] max-w-full object-contain rounded-md mb-3" 
-                    />
-                    <div className="flex justify-end">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-sm font-medium">Imagen a procesar</h3>
                       <Button
                         onClick={addCommandToPreview}
                         disabled={isProcessing}
@@ -353,9 +341,14 @@ const Demo = () => {
                         className="text-xs"
                       >
                         <Plus className="h-4 w-4 mr-1" />
-                        Procesar y Agregar
+                        Procesar
                       </Button>
                     </div>
+                    <img 
+                      src={uploadedImage} 
+                      alt="Comanda a procesar" 
+                      className="max-h-[200px] max-w-full object-contain rounded-md" 
+                    />
                   </div>
                 )}
                 
@@ -367,7 +360,7 @@ const Demo = () => {
                           <TableRow>
                             <TableHead>Producto</TableHead>
                             <TableHead className="text-right">Cantidad</TableHead>
-                            <TableHead className="text-right">Precio</TableHead>
+                            <TableHead className="text-right">P. Unitario</TableHead>
                             <TableHead className="text-right">Total</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -386,34 +379,29 @@ const Demo = () => {
                       </Table>
                     </div>
                     
-                    <div className="flex justify-between items-center pt-4 border-t">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Comandas: <span className="font-semibold">{commands.length}</span></p>
-                        <p className="text-sm text-muted-foreground">Productos totales: <span className="font-semibold">{totalItems}</span></p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Total: <span className="font-semibold">${totalAmount.toLocaleString('es-ES')}</span></p>
-                      </div>
-                    </div>
-                    
                     <div className="pt-4 border-t">
-                      <h3 className="text-sm font-medium mb-3">Comandas procesadas:</h3>
+                      <h3 className="text-sm font-medium mb-3">Comandas procesadas</h3>
                       <div className="space-y-2">
                         {commands.map(cmd => (
                           <div key={cmd.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
                             <div className="flex items-center">
                               <img 
                                 src={cmd.imageSrc} 
-                                alt="Comanda" 
+                                alt="Miniatura comanda" 
                                 className="h-10 w-10 object-cover rounded-md mr-3" 
                               />
-                              <span className="text-sm">{cmd.timestamp}</span>
+                              <div>
+                                <p className="text-sm">{cmd.timestamp}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {cmd.items.length} ítem(s) · Total: ${cmd.items.reduce((sum, item) => sum + item.total, 0).toLocaleString('es-ES')}
+                                </p>
+                              </div>
                             </div>
                             <Button
                               variant="ghost" 
                               size="icon"
                               onClick={() => removeCommand(cmd.id)}
-                              className="h-8 w-8 text-destructive"
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -428,8 +416,9 @@ const Demo = () => {
                       <FileSpreadsheet className="h-8 w-8 text-primary/60" />
                     </div>
                     <p className="text-muted-foreground">
-                      Aquí aparecerá la vista previa del Excel. <br />
-                      Sube una imagen y procésala para comenzar.
+                      {uploadedImage 
+                        ? "Procesa la imagen para ver los resultados aquí" 
+                        : "Aquí aparecerán las comandas procesadas"}
                     </p>
                   </div>
                 )}
@@ -439,10 +428,9 @@ const Demo = () => {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="mt-auto py-6 text-center text-sm text-muted-foreground">
         <div className="container mx-auto px-4">
-          <p>© {new Date().getFullYear()} HandSheet. Todos los derechos reservados.</p>
+          <p>© {new Date().getFullYear()} HandSheet · Procesamiento inteligente de comandas</p>
         </div>
       </footer>
     </div>
