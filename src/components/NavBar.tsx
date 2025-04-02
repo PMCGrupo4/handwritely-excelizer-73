@@ -1,12 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const NavBar = () => {
   const [scrolled, setScrolled] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,23 +34,35 @@ const NavBar = () => {
 
         <div className="hidden md:flex items-center space-x-8">
           <a href="#features" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors">
-            Features
+            {t('nav.features')}
           </a>
           <a href="#process" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors">
-            How It Works
+            {t('nav.howItWorks')}
           </a>
           <a href="#pricing" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors">
-            Pricing
+            {t('nav.pricing')}
           </a>
         </div>
 
-        <div>
+        <div className="flex items-center space-x-4">
+          <LanguageSwitcher />
+          <div className="hidden md:flex items-center space-x-2">
+            <Button
+              asChild
+              variant="ghost"
+              className="text-sm font-medium"
+            >
+              <Link to="/sign-in">
+                {t('nav.signIn')}
+              </Link>
+            </Button>
+          </div>
           <Button
             asChild
             className="hidden md:inline-flex h-10 px-5 py-2 bg-primary text-white rounded-full text-sm font-medium transition-all hover:bg-primary/90 active:scale-95"
           >
             <Link to="/demo">
-              Probar Ahora
+              {t('nav.tryNow')}
             </Link>
           </Button>
           <button className="md:hidden text-foreground">

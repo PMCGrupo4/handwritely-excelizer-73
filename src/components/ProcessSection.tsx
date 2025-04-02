@@ -3,35 +3,38 @@ import { FileSpreadsheet, Pen, ScanText, CloudUpload, CheckCircle } from 'lucide
 import { cn } from '@/lib/utils';
 import { redirectToDemoApp } from '@/utils/navigation';
 import { Button } from '@/components/ui/button';
-
-const processSteps = [
-  {
-    icon: <Pen />,
-    title: "Capture Your Notes",
-    description: "Take a picture of your handwritten notes, lists, or tables with your smartphone or upload an existing image.",
-    color: "from-blue-500/20 to-blue-500/5"
-  },
-  {
-    icon: <ScanText />,
-    title: "AI Processing",
-    description: "Our advanced AI analyzes your handwriting, recognizes text, and identifies table structures automatically.",
-    color: "from-purple-500/20 to-purple-500/5"
-  },
-  {
-    icon: <CheckCircle />,
-    title: "Review & Edit",
-    description: "Verify the converted data and make any necessary adjustments in our intuitive editor.",
-    color: "from-green-500/20 to-green-500/5"
-  },
-  {
-    icon: <CloudUpload />,
-    title: "Export & Share",
-    description: "Export directly to Excel or Google Sheets with a single click, ready to use immediately.",
-    color: "from-amber-500/20 to-amber-500/5"
-  }
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const ProcessSection = () => {
+  const { t } = useLanguage();
+
+  const processSteps = [
+    {
+      icon: <Pen />,
+      title: t('process.step1.title'),
+      description: t('process.step1.description'),
+      color: "from-blue-500/20 to-blue-500/5"
+    },
+    {
+      icon: <ScanText />,
+      title: t('process.step2.title'),
+      description: t('process.step2.description'),
+      color: "from-purple-500/20 to-purple-500/5"
+    },
+    {
+      icon: <CheckCircle />,
+      title: t('process.step3.title'),
+      description: t('process.step3.description'),
+      color: "from-green-500/20 to-green-500/5"
+    },
+    {
+      icon: <CloudUpload />,
+      title: t('process.step4.title'),
+      description: t('process.step4.description'),
+      color: "from-amber-500/20 to-amber-500/5"
+    }
+  ];
+
   return (
     <section id="process" className="py-24 relative overflow-hidden bg-gray-50">
       <div className="gradient-blur top-40 right-[20%]" />
@@ -39,13 +42,13 @@ const ProcessSection = () => {
       <div className="container max-w-7xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-16">
           <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-            <span>How It Works</span>
+            <span>{t('process.title')}</span>
           </div>
           <h2 className="text-3xl md:text-4xl font-display font-bold tracking-tight mb-4">
-            From Paper to Spreadsheet in 4 Simple Steps
+            {t('process.heading')}
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            HandSheet makes the process of converting handwritten notes to spreadsheet data quick and effortless.
+            {t('process.description')}
           </p>
         </div>
 
@@ -95,10 +98,10 @@ const ProcessSection = () => {
             onClick={redirectToDemoApp}
             className="inline-flex h-12 px-8 items-center justify-center rounded-full bg-primary text-white font-medium transition-all hover:bg-primary/90 active:scale-95 animate-fade-up"
           >
-            Try HandSheet Now
+            {t('process.cta')}
           </Button>
           <p className="text-muted-foreground mt-4 text-sm animate-fade-up" style={{ animationDelay: '100ms' }}>
-            No credit card required. Start converting your handwritten notes today.
+            {t('process.ctaSubtext')}
           </p>
         </div>
       </div>
