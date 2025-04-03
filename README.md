@@ -1,69 +1,122 @@
-# Welcome to your Lovable project
+# HandSheet - Handwriting to Excel Converter
 
-## Project info
+HandSheet is a web application that converts handwritten receipts and commands into Excel spreadsheets using OCR technology.
 
-**URL**: https://lovable.dev/projects/9a1a87aa-473e-4d53-b040-0710c20c3ae2
+## Features
 
-## How can I edit this code?
+- Upload images of handwritten receipts/commands
+- Use your device's camera to capture receipts
+- Automatic OCR processing to extract text
+- Convert extracted data to Excel format
+- User authentication with email/password, Google, and Facebook
+- Save and manage your processed commands
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **Frontend**: React, TypeScript, Vite, Tailwind CSS, Shadcn UI
+- **Backend**: Supabase (Authentication, Database, Storage)
+- **OCR**: Tesseract.js
+- **Excel Generation**: XLSX.js
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/9a1a87aa-473e-4d53-b040-0710c20c3ae2) and start prompting.
+## Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- Node.js (v16 or higher)
+- npm or yarn
+- A Supabase account
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/handwritely-excelizer.git
+   cd handwritely-excelizer
+   ```
 
-Follow these steps:
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+3. Create a `.env` file based on `.env.example`:
+   ```bash
+   cp .env.example .env
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+4. Set up your Supabase project:
+   - Create a new project at [Supabase](https://supabase.com)
+   - Get your project URL and anon key from the project settings
+   - Add them to your `.env` file
 
-# Step 3: Install the necessary dependencies.
-npm i
+5. Set up Supabase Authentication:
+   - In your Supabase dashboard, go to Authentication > Providers
+   - Enable Email/Password authentication
+   - Enable Google authentication (requires Google OAuth credentials)
+   - Enable Facebook authentication (requires Facebook App credentials)
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+6. Create the necessary database tables:
+   ```sql
+   -- Create a table for storing commands
+   CREATE TABLE commands (
+     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+     image_url TEXT,
+     items JSONB,
+     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+   );
 
-**Edit a file directly in GitHub**
+   -- Create an index for faster queries
+   CREATE INDEX commands_user_id_idx ON commands(user_id);
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+   -- Set up Row Level Security (RLS)
+   ALTER TABLE commands ENABLE ROW LEVEL SECURITY;
 
-**Use GitHub Codespaces**
+   -- Create a policy that allows users to see only their own commands
+   CREATE POLICY "Users can view their own commands" 
+   ON commands FOR SELECT 
+   USING (auth.uid() = user_id);
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+   -- Create a policy that allows users to insert their own commands
+   CREATE POLICY "Users can insert their own commands" 
+   ON commands FOR INSERT 
+   WITH CHECK (auth.uid() = user_id);
 
-## What technologies are used for this project?
+   -- Create a policy that allows users to update their own commands
+   CREATE POLICY "Users can update their own commands" 
+   ON commands FOR UPDATE 
+   USING (auth.uid() = user_id);
 
-This project is built with .
+   -- Create a policy that allows users to delete their own commands
+   CREATE POLICY "Users can delete their own commands" 
+   ON commands FOR DELETE 
+   USING (auth.uid() = user_id);
+   ```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+7. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-## How can I deploy this project?
+8. Open your browser and navigate to `http://localhost:5173`
 
-Simply open [Lovable](https://lovable.dev/projects/9a1a87aa-473e-4d53-b040-0710c20c3ae2) and click on Share -> Publish.
+## Deployment
 
-## I want to use a custom domain - is that possible?
+1. Build the production version:
+   ```bash
+   npm run build
+   ```
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+2. Deploy to your preferred hosting service (Vercel, Netlify, etc.)
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- [Tesseract.js](https://github.com/naptha/tesseract.js) for OCR capabilities
+- [XLSX.js](https://github.com/SheetJS/sheetjs) for Excel generation
+- [Supabase](https://supabase.com) for backend services
+- [Shadcn UI](https://ui.shadcn.com) for UI components

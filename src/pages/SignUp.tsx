@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import SocialAuthButtons from '@/components/SocialAuthButtons';
+import { useAuth } from '@/contexts/AuthContext';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
@@ -28,6 +29,7 @@ type FormValues = z.infer<typeof formSchema>;
 const SignUp = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { signUp, signInWithGoogle, signInWithFacebook } = useAuth();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -39,31 +41,25 @@ const SignUp = () => {
     },
   });
 
-  const onSubmit = (data: FormValues) => {
-    // Placeholder for actual registration
-    console.log('Sign up attempt with:', data);
-    toast.success('Account created successfully!');
-
-    // Redirect to sign in page after successful registration
-    setTimeout(() => {
-      navigate('/sign-in');
-    }, 1500);
+  const onSubmit = async (data: FormValues) => {
+    const { error } = await signUp(data.email, data.password, data.name);
+    if (error) {
+      console.error('Sign up error:', error);
+    }
   };
 
-  const handleGoogleSignUp = () => {
-    // TODO: Implement Google sign up
-    toast({
-      title: t('auth.googleSignInComingSoon'),
-      description: t('auth.featureComingSoon'),
-    });
+  const handleGoogleSignUp = async () => {
+    const { error } = await signInWithGoogle();
+    if (error) {
+      console.error('Google sign up error:', error);
+    }
   };
 
-  const handleFacebookSignUp = () => {
-    // TODO: Implement Facebook sign up
-    toast({
-      title: t('auth.facebookSignInComingSoon'),
-      description: t('auth.featureComingSoon'),
-    });
+  const handleFacebookSignUp = async () => {
+    const { error } = await signInWithFacebook();
+    if (error) {
+      console.error('Facebook sign up error:', error);
+    }
   };
 
   return (
@@ -142,26 +138,32 @@ const SignUp = () => {
                 )}
               />
               <Button type="submit" className="w-full">
-                {t('auth.createAccount')}
+                {t('auth.signUp')}
               </Button>
             </form>
           </Form>
 
-          <div className="text-center mt-6 space-y-4">
-            <p className="text-sm text-muted-foreground">{t('auth.socialText')}</p>
-            <SocialAuthButtons
-              onGoogleClick={handleGoogleSignUp}
-              onFacebookClick={handleFacebookSignUp}
-            />
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                {t('auth.orContinueWith')}
+              </span>
+            </div>
           </div>
 
-          <div className="text-center mt-6">
-            <p className="text-sm text-muted-foreground">
-              {t('auth.alreadyHaveAccount')}{' '}
-              <Link to="/sign-in" className="text-primary hover:underline">
-                {t('auth.signIn')}
-              </Link>
-            </p>
+          <SocialAuthButtons
+            onGoogleClick={handleGoogleSignUp}
+            onFacebookClick={handleFacebookSignUp}
+          />
+
+          <div className="text-center text-sm">
+            <span className="text-muted-foreground">{t('auth.alreadyHaveAccount')} </span>
+            <Link to="/sign-in" className="text-primary hover:underline">
+              {t('auth.signIn')}
+            </Link>
           </div>
         </div>
       </div>

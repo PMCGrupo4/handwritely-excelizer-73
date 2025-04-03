@@ -21,9 +21,14 @@ const FacebookIcon = () => (
   </svg>
 );
 
-const SocialAuthButtons: React.FC<{ onGoogleClick: () => void; onFacebookClick: () => void }> = ({
+const SocialAuthButtons: React.FC<{ 
+  onGoogleClick: () => void; 
+  onFacebookClick: () => void;
+  disabled?: boolean;
+}> = ({
   onGoogleClick,
   onFacebookClick,
+  disabled = false,
 }) => {
   const { t } = useLanguage();
 
@@ -33,6 +38,7 @@ const SocialAuthButtons: React.FC<{ onGoogleClick: () => void; onFacebookClick: 
         variant="outline"
         className="flex-1 flex items-center justify-center gap-2"
         onClick={onGoogleClick}
+        disabled={disabled}
       >
         <GoogleIcon />
         {t('auth.signInWithGoogle')}
@@ -41,6 +47,7 @@ const SocialAuthButtons: React.FC<{ onGoogleClick: () => void; onFacebookClick: 
         variant="outline"
         className="flex-1 flex items-center justify-center gap-2"
         onClick={onFacebookClick}
+        disabled={disabled}
       >
         <FacebookIcon />
         {t('auth.signInWithFacebook')}

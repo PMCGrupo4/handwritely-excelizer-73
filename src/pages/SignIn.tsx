@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,12 +6,15 @@ import { toast } from 'sonner';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, FileSpreadsheet } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, FileSpreadsheet, AlertCircle } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import SocialAuthButtons from '@/components/SocialAuthButtons';
+import { useAuth } from '@/contexts/AuthContext';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { CheckCircle } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -22,7 +25,14 @@ type FormValues = z.infer<typeof formSchema>;
 
 const SignIn = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
+  const { signIn, signInWithGoogle, signInWithFacebook } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  
+  // Verificar si el usuario viene de la página de registro
+  const fromSignUp = location.state?.fromSignUp || false;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -32,28 +42,67 @@ const SignIn = () => {
     },
   });
 
-  const onSubmit = (data: FormValues) => {
-    console.log('Sign in attempt with:', data);
-    toast.success('Sign in successful!');
-    setTimeout(() => {
-      navigate('/');
-    }, 1500);
+  const onSubmit = async (data: FormValues) => {
+    setIsLoading(true);
+    setAuthError(null);
+    
+    try {
+      const { error } = await signIn(data.email, data.password);
+      if (error) {
+        // El mensaje de error ya se muestra en el contexto de autenticación
+        // pero también lo guardamos aquí para mostrar en la UI si es necesario
+        if (error.message.includes('Invalid login credentials')) {
+          setAuthError('El correo electrónico o la contraseña son incorrectos.');
+        } else if (error.message.includes('Email not confirmed')) {
+          setAuthError('Por favor, verifica tu correo electrónico antes de iniciar sesión.');
+        } else if (error.message.includes('User not found')) {
+          setAuthError('No existe una cuenta con este correo electrónico.');
+        } else {
+          setAuthError('Ha ocurrido un error al intentar iniciar sesión.');
+        }
+      }
+    } catch (error) {
+      console.error('Sign in error:', error);
+      setAuthError('Ha ocurrido un error al intentar iniciar sesión.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleGoogleSignIn = () => {
-    // TODO: Implement Google sign in
-    toast({
-      title: t('auth.googleSignInComingSoon'),
-      description: t('auth.featureComingSoon'),
-    });
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    setAuthError(null);
+    
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        console.error('Google sign in error:', error);
+        setAuthError('Error al iniciar sesión con Google.');
+      }
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      setAuthError('Error al iniciar sesión con Google.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleFacebookSignIn = () => {
-    // TODO: Implement Facebook sign in
-    toast({
-      title: t('auth.facebookSignInComingSoon'),
-      description: t('auth.featureComingSoon'),
-    });
+  const handleFacebookSignIn = async () => {
+    setIsLoading(true);
+    setAuthError(null);
+    
+    try {
+      const { error } = await signInWithFacebook();
+      if (error) {
+        console.error('Facebook sign in error:', error);
+        setAuthError('Error al iniciar sesión con Facebook.');
+      }
+    } catch (error) {
+      console.error('Facebook sign in error:', error);
+      setAuthError('Error al iniciar sesión con Facebook.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -76,6 +125,33 @@ const SignIn = () => {
         <div className="w-full max-w-md space-y-8">
           <h1 className="text-3xl font-bold tracking-tight mb-2">{t('auth.welcomeBack')}</h1>
           <p className="text-muted-foreground">{t('auth.signInDescription')}</p>
+
+          {fromSignUp && (
+            <Alert className="bg-green-50 border-green-200">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-800">¡Registro exitoso!</AlertTitle>
+              <AlertDescription className="text-green-700">
+                Tu cuenta ha sido creada correctamente. Ahora debes iniciar sesión para continuar.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {authError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error de autenticación</AlertTitle>
+              <AlertDescription>
+                {authError}
+                {authError.includes('incorrectos') && (
+                  <div className="mt-2">
+                    <Link to="/sign-up" className="text-primary hover:underline font-medium">
+                      ¿No tienes una cuenta? Regístrate aquí
+                    </Link>
+                  </div>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -105,27 +181,39 @@ const SignIn = () => {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                {t('auth.signIn')}
+              <div className="flex justify-end">
+                <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Iniciando sesión...' : t('auth.signIn')}
               </Button>
             </form>
           </Form>
 
-          <div className="text-center mt-6 space-y-4">
-            <p className="text-sm text-muted-foreground">{t('auth.socialText')}</p>
-            <SocialAuthButtons
-              onGoogleClick={handleGoogleSignIn}
-              onFacebookClick={handleFacebookSignIn}
-            />
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                {t('auth.orContinueWith')}
+              </span>
+            </div>
           </div>
 
-          <div className="text-center mt-6">
-            <p className="text-sm text-muted-foreground">
-              {t('auth.dontHaveAccount')}{' '}
-              <Link to="/sign-up" className="text-primary hover:underline">
-                {t('auth.signUp')}
-              </Link>
-            </p>
+          <SocialAuthButtons
+            onGoogleClick={handleGoogleSignIn}
+            onFacebookClick={handleFacebookSignIn}
+            disabled={isLoading}
+          />
+
+          <div className="text-center text-sm">
+            <span className="text-muted-foreground">{t('auth.noAccount')} </span>
+            <Link to="/sign-up" className="text-primary hover:underline">
+              {t('auth.signUp')}
+            </Link>
           </div>
         </div>
       </div>
