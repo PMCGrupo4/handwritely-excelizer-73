@@ -6,6 +6,8 @@ import { toast } from '@/components/ui/use-toast';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { createWorker } from 'tesseract.js';
 import * as XLSX from 'xlsx';
+import { commandService } from '@/services/api';
+import axios from 'axios';
 
 interface CommandItem {
   id: string;
@@ -90,21 +92,68 @@ const Demo = () => {
       });
   };
 
-  // Procesa la imagen con Tesseract.js
-  const processImageWithOCR = async (imageSrc: string): Promise<CommandTableRow[]> => {
-    setIsProcessing(true);
-    const worker = await createWorker('spa');
-    
-    try {
-      const { data } = await worker.recognize(imageSrc);
-      console.log("Texto detectado por OCR:", data.text); // Debug
-      await worker.terminate();
-      return parseCommandText(data.text);
-    } catch (error) {
-      console.error("Error en OCR:", error);
+  // Procesa la imagen con el backend en lugar de Tesseract.js local
+  const processImageWithOCR = async (): Promise<CommandTableRow[]> => {
+    if (!uploadedImage) {
       toast({
         title: "Error de procesamiento",
-        description: "No se pudo leer la comanda. Verifica que la imagen sea clara y el texto esté legible.",
+        description: "No hay imagen para procesar",
+        variant: "destructive",
+      });
+      return [];
+    }
+  
+    setIsProcessing(true);
+  
+    try {
+      const fetchRes = await fetch(uploadedImage);
+      const blob = await fetchRes.blob();
+      const file = new File([blob], "command-image.jpg", { type: "image/jpeg" });
+  
+      // Crear una instancia de FormData para enviar la imagen
+      const formData = new FormData();
+      formData.append('image', file);
+  
+      // Realizar la petición directamente al endpoint de OCR
+      const response = await axios.post('http://localhost:3000/api/commands/ocr', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+  
+      const data = response.data;
+  
+      // Verificar si hay una respuesta válida del backend
+      if (data && data.success && data.data && data.data.receipt) {
+        const receiptData = data.data.receipt;
+  
+        // Mapear los items del recibo al formato CommandTableRow
+        return receiptData.items.map((item, index) => ({
+          id: `item-${Date.now()}-${index}`,
+          producto: item.name,
+          cantidad: item.quantity,
+          precio: item.price,
+          total: item.subtotal
+        }));
+      } else {
+        // Si el backend devuelve un raw text, lo podemos procesar con la lógica existente
+        if (data?.data?.rawText) {
+          console.log("Texto detectado por OCR (desde backend):", data.data.rawText);
+          return parseCommandText(data.data.rawText);
+        }
+  
+        toast({
+          title: "Error de procesamiento",
+          description: "El servidor no devolvió datos en el formato esperado. Inténtalo de nuevo.",
+          variant: "destructive",
+        });
+        return [];
+      }
+    } catch (error) {
+      console.error("Error en OCR (backend):", error);
+      toast({
+        title: "Error de procesamiento",
+        description: "No se pudo conectar con el servidor para procesar la imagen. Verifica tu conexión a internet.",
         variant: "destructive",
       });
       return [];
@@ -124,7 +173,7 @@ const Demo = () => {
       return;
     }
 
-    const items = await processImageWithOCR(uploadedImage);
+    const items = await processImageWithOCR();
     if (items.length === 0) return;
 
     const newCommand: CommandItem = {
