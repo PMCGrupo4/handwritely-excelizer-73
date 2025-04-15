@@ -29,7 +29,7 @@ type FormValues = z.infer<typeof formSchema>;
 const SignUp = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { signUp, signInWithGoogle, signInWithFacebook } = useAuth();
+  const { signUp, signInWithGoogle } = useAuth();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -49,16 +49,15 @@ const SignUp = () => {
   };
 
   const handleGoogleSignUp = async () => {
-    const { error } = await signInWithGoogle();
-    if (error) {
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        console.error('Google sign up error:', error);
+        setAuthError('Error al registrarse con Google.');
+      }
+    } catch (error) {
       console.error('Google sign up error:', error);
-    }
-  };
-
-  const handleFacebookSignUp = async () => {
-    const { error } = await signInWithFacebook();
-    if (error) {
-      console.error('Facebook sign up error:', error);
+      setAuthError('Error al registrarse con Google.');
     }
   };
 
@@ -156,7 +155,6 @@ const SignUp = () => {
 
           <SocialAuthButtons
             onGoogleClick={handleGoogleSignUp}
-            onFacebookClick={handleFacebookSignUp}
           />
 
           <div className="text-center text-sm">

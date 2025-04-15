@@ -11,11 +11,9 @@ interface LanguageContextType {
 const translations = {
   en: {
     'auth.signInWithGoogle': 'Sign in with Google',
-    'auth.signInWithFacebook': 'Sign in with Facebook',
     'auth.title': 'Sign in to save your data',
     'auth.description': 'Create an account to save your processed commands and access them from any device.',
     'auth.googleSignInComingSoon': 'Google Sign In Coming Soon',
-    'auth.facebookSignInComingSoon': 'Facebook Sign In Coming Soon',
     'auth.featureComingSoon': 'This feature will be available soon!',
     'language.switchTo': 'Switch to',
     'language.english': 'English',
@@ -173,11 +171,9 @@ const translations = {
   },
   es: {
     'auth.signInWithGoogle': 'Iniciar sesión con Google',
-    'auth.signInWithFacebook': 'Iniciar sesión con Facebook',
     'auth.title': 'Inicia sesión para guardar tus datos',
     'auth.description': 'Crea una cuenta para guardar tus comandos procesados y acceder a ellos desde cualquier dispositivo.',
     'auth.googleSignInComingSoon': 'Inicio de sesión con Google próximamente',
-    'auth.facebookSignInComingSoon': 'Inicio de sesión con Facebook próximamente',
     'auth.featureComingSoon': '¡Esta característica estará disponible pronto!',
     'language.switchTo': 'Cambiar a',
     'language.english': 'Inglés',

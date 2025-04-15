@@ -9,12 +9,11 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
-  signOut: () => Promise<{ error: any }>;
+  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<{ error: any }>;
-  signInWithFacebook: () => Promise<{ error: any }>;
   resetPassword: (email: string) => Promise<{ error: any }>;
-  updatePassword: (password: string) => Promise<{ error: any }>;
+  updatePassword: (newPassword: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -96,13 +95,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const handleSignUp = async (email: string, password: string, name: string) => {
+  const handleSignUp = async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          name,
         },
       },
     });
@@ -139,43 +137,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       navigate('/');
     }
-    return { error };
   };
 
   const handleSignInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: 'https://kxtpfwtbpvwhjarkulix.supabase.co/auth/v1/callback',
-      },
-    });
-
-    if (error) {
-      toast.error('Error al iniciar sesión con Google', {
-        description: error.message,
-        duration: 5000,
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
+
+      if (error) {
+        toast.error('Error al iniciar sesión con Google', {
+          description: error.message,
+        });
+        return { error };
+      }
+
+      return { error: null };
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      toast.error('Error al iniciar sesión con Google');
+      return { error };
     }
-
-    return { error };
-  };
-
-  const handleSignInWithFacebook = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'facebook',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-
-    if (error) {
-      toast.error('Error al iniciar sesión con Facebook', {
-        description: error.message,
-        duration: 5000,
-      });
-    }
-
-    return { error };
   };
 
   const handleResetPassword = async (email: string) => {
@@ -198,9 +183,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const handleUpdatePassword = async (password: string) => {
+  const handleUpdatePassword = async (newPassword: string) => {
     const { error } = await supabase.auth.updateUser({
-      password,
+      password: newPassword,
     });
 
     if (error) {
@@ -226,7 +211,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp: handleSignUp,
     signOut: handleSignOut,
     signInWithGoogle: handleSignInWithGoogle,
-    signInWithFacebook: handleSignInWithFacebook,
     resetPassword: handleResetPassword,
     updatePassword: handleUpdatePassword,
   };

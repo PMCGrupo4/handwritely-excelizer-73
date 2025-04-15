@@ -27,7 +27,7 @@ const SignIn = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
-  const { signIn, signInWithGoogle, signInWithFacebook } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   
@@ -70,9 +70,6 @@ const SignIn = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    setAuthError(null);
-    
     try {
       const { error } = await signInWithGoogle();
       if (error) {
@@ -82,26 +79,6 @@ const SignIn = () => {
     } catch (error) {
       console.error('Google sign in error:', error);
       setAuthError('Error al iniciar sesión con Google.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleFacebookSignIn = async () => {
-    setIsLoading(true);
-    setAuthError(null);
-    
-    try {
-      const { error } = await signInWithFacebook();
-      if (error) {
-        console.error('Facebook sign in error:', error);
-        setAuthError('Error al iniciar sesión con Facebook.');
-      }
-    } catch (error) {
-      console.error('Facebook sign in error:', error);
-      setAuthError('Error al iniciar sesión con Facebook.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -205,8 +182,6 @@ const SignIn = () => {
 
           <SocialAuthButtons
             onGoogleClick={handleGoogleSignIn}
-            onFacebookClick={handleFacebookSignIn}
-            disabled={isLoading}
           />
 
           <div className="text-center text-sm">
