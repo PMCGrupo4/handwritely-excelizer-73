@@ -15,7 +15,7 @@ interface SocialAuthButtonsProps {
   onGoogleClick: () => void;
 }
 
-export function SocialAuthButtons({ onGoogleClick }: SocialAuthButtonsProps) {
+export default function SocialAuthButtons({ onGoogleClick }: SocialAuthButtonsProps) {
   const { t } = useLanguage();
 
   return (
