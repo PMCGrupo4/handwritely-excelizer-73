@@ -115,7 +115,7 @@ const Demo = () => {
       formData.append('image', file);
   
       // Realizar la petición directamente al endpoint de OCR
-      const response = await axios.post('http://localhost:3000/api/commands/ocr', formData, {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/commands/ocr`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
