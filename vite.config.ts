@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -15,6 +14,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: true,
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -22,7 +22,7 @@ export default defineConfig({
         },
         assetFileNames: (assetInfo) => {
           if (assetInfo.name && assetInfo.name.endsWith('.css')) {
-            return 'assets/[name]-[hash].css';
+            return 'assets/[name][extname]';
           }
           return 'assets/[name]-[hash][extname]';
         },
