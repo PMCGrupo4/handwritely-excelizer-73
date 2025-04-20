@@ -1,37 +1,25 @@
 import axios from 'axios';
 
-// Configuración base de axios
+// Configuración simplificada de axios
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://handsheetbackend.netlify.app/api',
+  baseURL: import.meta.env.VITE_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000,
-  withCredentials: false
+  timeout: 60000
 });
 
-// Interceptor para manejar errores
+// Interceptor mínimo para errores
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status,
-      headers: error.response?.headers,
-      config: error.config
-    });
-    
-    if (error.message === 'Network Error' && !error.response) {
-      console.error('CORS Error: No se pudo establecer conexión con el servidor');
-    }
-    
+    console.error('API Error:', error.message);
     return Promise.reject(error);
   }
 );
 
 // Función para comprimir una imagen
-export const compressImage = async (file: File, quality = 0.8, maxWidth = 1920): Promise<File> => {
+export const compressImage = async (file: File): Promise<File> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -43,12 +31,13 @@ export const compressImage = async (file: File, quality = 0.8, maxWidth = 1920):
         return;
       }
       
+      // Reducir tamaño significativamente
       let width = img.width;
       let height = img.height;
       
-      if (width > maxWidth) {
-        height = (height * maxWidth) / width;
-        width = maxWidth;
+      if (width > 800) {
+        height = (height * 800) / width;
+        width = 800;
       }
       
       canvas.width = width;
@@ -71,85 +60,68 @@ export const compressImage = async (file: File, quality = 0.8, maxWidth = 1920):
           resolve(compressedFile);
         },
         'image/jpeg',
-        quality
+        0.5 // Reducir calidad para menor tamaño
       );
     };
     
     img.onerror = () => {
-      reject(new Error("Error al cargar la imagen para compresión"));
+      reject(new Error("Error al cargar la imagen"));
     };
     
     img.src = URL.createObjectURL(file);
   });
 };
 
-// Función para convertir un archivo a URL de datos
+// Función para convertir archivo a base64
 export const fileToDataUrl = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => {
-      resolve(reader.result as string);
-    };
-    reader.onerror = (error) => {
-      reject(error);
-    };
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
     reader.readAsDataURL(file);
   });
 };
 
-// Servicios para comandos
+// Servicios simplificados
 export const commandService = {
-  // Obtener todos los comandos de un usuario
-  getUserCommands: async (userId: string) => {
-    try {
-      const response = await api.get(`/commands/${userId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching user commands:', error);
-      throw error;
-    }
-  },
-
-  // Procesar imagen con OCR
   processImageOCR: async (imageBase64: string, userId: string = 'demo-user') => {
     try {
-      const response = await api.post('/commands/ocr', {
+      // Intentar directamente con la función de Netlify
+      const response = await axios.post('https://handsheetbackend.netlify.app/.netlify/functions/ocr', {
         image: imageBase64,
         userId
+      }, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 60000
       });
+      
       return response.data;
     } catch (error) {
-      console.error('Error processing image with OCR:', error);
+      console.error('Error en OCR:', error);
       throw error;
     }
   },
 
-  // Crear un nuevo comando
   createCommand: async (userId: string, imageFile: File) => {
     try {
       const compressedFile = await compressImage(imageFile);
       const imageBase64 = await fileToDataUrl(compressedFile);
-      const response = await api.post('/commands/ocr', {
+      
+      // Usar la ruta directa a la función
+      const response = await axios.post('https://handsheetbackend.netlify.app/.netlify/functions/ocr', {
         userId,
         image: imageBase64
+      }, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 60000
       });
+      
       return response.data;
     } catch (error) {
       console.error('Error creating command:', error);
       throw error;
     }
-  },
-
-  // Eliminar un comando
-  deleteCommand: async (commandId: string) => {
-    try {
-      const response = await api.delete(`/commands/${commandId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error deleting command:', error);
-      throw error;
-    }
-  },
+  }
 };
 
-export default api; 
+export default api;
