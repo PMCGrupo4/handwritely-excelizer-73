@@ -39,7 +39,7 @@ const shouldUseMockData = () => {
 
 // Configuración base de axios
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://handsheetbackend.netlify.app/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -52,7 +52,18 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', error.response?.data || error.message);
+    console.error('API Error:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      headers: error.response?.headers
+    });
+    
+    // Si es un error de CORS, mostrar un mensaje más específico
+    if (error.message === 'Network Error' && !error.response) {
+      console.error('CORS Error: No se pudo establecer conexión con el servidor');
+    }
+    
     return Promise.reject(error);
   }
 );
