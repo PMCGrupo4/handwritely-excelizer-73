@@ -106,22 +106,17 @@ const Demo = () => {
     setIsProcessing(true);
   
     try {
-      const fetchRes = await fetch(uploadedImage);
-      const blob = await fetchRes.blob();
-      const file = new File([blob], "command-image.jpg", { type: "image/jpeg" });
-  
-      // Crear una instancia de FormData para enviar la imagen
-      const formData = new FormData();
-      formData.append('image', file);
-  
-      // Realizar la petición directamente al endpoint de OCR
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/commands/ocr`, formData, {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/commands/ocr`, {
+        image: uploadedImage,
+        userId: 'demo-user' // o el userId que tengas disponible
+      }, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'application/json',
         },
       });
-  
+      
       const data = response.data;
+      
   
       // Verificar si hay una respuesta válida del backend
       if (data && data.success && data.data && data.data.receipt) {
