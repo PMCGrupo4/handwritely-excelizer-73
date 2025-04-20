@@ -155,25 +155,21 @@ export const commandService = {
 
   // Crear un nuevo comando
   createCommand: async (userId: string, imageFile: File) => {
-    // No usamos datos de ejemplo para la creación de comandos
     try {
       // Comprimir la imagen antes de enviarla
       const compressedFile = await compressImage(imageFile);
       
-      const formData = new FormData();
-      formData.append('userId', userId);
-      formData.append('image', compressedFile);
+      // Convertir la imagen a base64
+      const imageBase64 = await fileToDataUrl(compressedFile);
 
-      const response = await api.post('/commands', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const response = await api.post('/commands/ocr', {
+        userId,
+        image: imageBase64
       });
+
       return response.data;
     } catch (error) {
       console.error('Error creating command:', error);
-      
-      // Lanzar el error para que la UI pueda manejarlo
       throw error;
     }
   },
