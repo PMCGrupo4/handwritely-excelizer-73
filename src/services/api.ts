@@ -113,10 +113,15 @@ export const commandService = {
   // Procesar imagen con OCR
   processImageOCR: async (imageBase64: string, userId: string = 'demo-user') => {
     try {
-      // Usar directamente la ruta de la función Netlify
-      const response = await api.post('/.netlify/functions/ocr', {
+      // Usar URL absoluta con axios directamente
+      const response = await axios.post('https://handsheetbackend.netlify.app/.netlify/functions/ocr', {
         image: imageBase64,
         userId
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 60000
       });
       return response.data;
     } catch (error) {
@@ -141,10 +146,15 @@ export const commandService = {
       const imageBase64 = await fileToDataUrl(finalFile);
       console.log(`Tamaño de imagen después de compresión: ${Math.round(finalFile.size/1024)}KB`);
       
-      // Usar directamente la ruta de la función Netlify
-      const response = await api.post('/.netlify/functions/ocr', {
+      // Usar URL absoluta con axios directamente
+      const response = await axios.post('https://handsheetbackend.netlify.app/.netlify/functions/ocr', {
         userId,
         image: imageBase64
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 60000
       });
       return response.data;
     } catch (error) {
