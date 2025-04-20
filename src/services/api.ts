@@ -44,7 +44,8 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   // Aumentar el tiempo de espera para evitar errores de red
-  timeout: 10000,
+  timeout: 30000, // Aumentado a 30 segundos
+  withCredentials: true, // Importante para CORS con credenciales
 });
 
 // Interceptor para manejar errores
@@ -165,6 +166,10 @@ export const commandService = {
       const response = await api.post('/commands/ocr', {
         userId,
         image: imageBase64
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
 
       return response.data;
