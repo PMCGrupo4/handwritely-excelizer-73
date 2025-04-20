@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Configuración base de axios
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://handsheetbackend.netlify.app/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://handsheetbackend.netlify.app',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -102,7 +102,7 @@ export const commandService = {
   // Obtener todos los comandos de un usuario
   getUserCommands: async (userId: string) => {
     try {
-      const response = await api.get(`/commands/${userId}`);
+      const response = await api.get(`/api/commands/${userId}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching user commands:', error);
@@ -113,8 +113,8 @@ export const commandService = {
   // Procesar imagen con OCR
   processImageOCR: async (imageBase64: string, userId: string = 'demo-user') => {
     try {
-      // Usar la ruta /api/commands/ocr que está configurada en el redirects de netlify.toml
-      const response = await api.post('/commands/ocr', {
+      // Usar directamente la ruta de la función Netlify
+      const response = await api.post('/.netlify/functions/ocr', {
         image: imageBase64,
         userId
       });
@@ -141,7 +141,8 @@ export const commandService = {
       const imageBase64 = await fileToDataUrl(finalFile);
       console.log(`Tamaño de imagen después de compresión: ${Math.round(finalFile.size/1024)}KB`);
       
-      const response = await api.post('/commands/ocr', {
+      // Usar directamente la ruta de la función Netlify
+      const response = await api.post('/.netlify/functions/ocr', {
         userId,
         image: imageBase64
       });
@@ -155,7 +156,7 @@ export const commandService = {
   // Eliminar un comando
   deleteCommand: async (commandId: string) => {
     try {
-      const response = await api.delete(`/commands/${commandId}`);
+      const response = await api.delete(`/api/commands/${commandId}`);
       return response.data;
     } catch (error) {
       console.error('Error deleting command:', error);
