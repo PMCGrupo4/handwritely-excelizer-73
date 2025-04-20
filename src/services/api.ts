@@ -42,10 +42,10 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'https://handsheetbackend.netlify.app/api',
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
-  // Aumentar el tiempo de espera para evitar errores de red
-  timeout: 30000, // Aumentado a 30 segundos
-  withCredentials: true, // Importante para CORS con credenciales
+  timeout: 30000,
+  withCredentials: true,
 });
 
 // Interceptor para manejar errores
@@ -56,10 +56,10 @@ api.interceptors.response.use(
       message: error.message,
       response: error.response?.data,
       status: error.response?.status,
-      headers: error.response?.headers
+      headers: error.response?.headers,
+      config: error.config
     });
     
-    // Si es un error de CORS, mostrar un mensaje más específico
     if (error.message === 'Network Error' && !error.response) {
       console.error('CORS Error: No se pudo establecer conexión con el servidor');
     }
@@ -81,7 +81,6 @@ export const compressImage = async (file: File, quality = 0.8, maxWidth = 1920):
         return;
       }
       
-      // Calcular dimensiones manteniendo proporción
       let width = img.width;
       let height = img.height;
       
@@ -93,10 +92,8 @@ export const compressImage = async (file: File, quality = 0.8, maxWidth = 1920):
       canvas.width = width;
       canvas.height = height;
       
-      // Dibujar imagen en el canvas
       ctx.drawImage(img, 0, 0, width, height);
       
-      // Convertir a blob
       canvas.toBlob(
         (blob) => {
           if (!blob) {
@@ -104,7 +101,7 @@ export const compressImage = async (file: File, quality = 0.8, maxWidth = 1920):
             return;
           }
           
-          const compressedFile = new File([blob], file.name, {
+          const compressedFile = new File([blob], 'image.jpg', {
             type: 'image/jpeg',
             lastModified: Date.now(),
           });
@@ -142,25 +139,25 @@ export const fileToDataUrl = (file: File): Promise<string> => {
 export const commandService = {
   // Obtener todos los comandos de un usuario
   getUserCommands: async (userId: string) => {
-    // Si estamos en desarrollo y debemos usar datos de ejemplo, devolverlos directamente
-    if (shouldUseMockData()) {
-      console.log('Using mock data for development (getUserCommands)');
-      // Devolver un array vacío en lugar de datos de ejemplo
-      return [];
-    }
-    
     try {
       const response = await api.get(`/commands/${userId}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching user commands:', error);
-      
-      // En desarrollo, devolver un array vacío si hay un error de red
-      if (isDevelopment() && (error.message === 'Network Error' || error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED')) {
-        console.log('Using empty array for development (error fallback)');
-        return [];
-      }
-      
+      throw error;
+    }
+  },
+
+  // Procesar imagen con OCR
+  processImageOCR: async (imageBase64: string, userId: string = 'demo-user') => {
+    try {
+      const response = await api.post('/commands/ocr', {
+        image: imageBase64,
+        userId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error processing image with OCR:', error);
       throw error;
     }
   },
@@ -168,21 +165,12 @@ export const commandService = {
   // Crear un nuevo comando
   createCommand: async (userId: string, imageFile: File) => {
     try {
-      // Comprimir la imagen antes de enviarla
       const compressedFile = await compressImage(imageFile);
-      
-      // Convertir la imagen a base64
       const imageBase64 = await fileToDataUrl(compressedFile);
-
       const response = await api.post('/commands/ocr', {
         userId,
         image: imageBase64
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-        }
       });
-
       return response.data;
     } catch (error) {
       console.error('Error creating command:', error);
@@ -192,24 +180,11 @@ export const commandService = {
 
   // Eliminar un comando
   deleteCommand: async (commandId: string) => {
-    // Si estamos en desarrollo y debemos usar datos de ejemplo, simular éxito
-    if (shouldUseMockData()) {
-      console.log('Using mock data for development (deleteCommand)');
-      return { success: true };
-    }
-    
     try {
       const response = await api.delete(`/commands/${commandId}`);
       return response.data;
     } catch (error) {
       console.error('Error deleting command:', error);
-      
-      // En desarrollo, simular éxito si hay un error de red
-      if (isDevelopment() && (error.message === 'Network Error' || error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED')) {
-        console.log('Using mock data for development (error fallback)');
-        return { success: true };
-      }
-      
       throw error;
     }
   },

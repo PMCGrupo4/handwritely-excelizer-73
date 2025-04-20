@@ -106,21 +106,10 @@ const Demo = () => {
     setIsProcessing(true);
   
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/commands/ocr`, {
-        image: uploadedImage,
-        userId: 'demo-user' // o el userId que tengas disponible
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await commandService.processImageOCR(uploadedImage);
       
-      const data = response.data;
-      
-  
-      // Verificar si hay una respuesta válida del backend
-      if (data && data.success && data.data && data.data.receipt) {
-        const receiptData = data.data.receipt;
+      if (response && response.success && response.data && response.data.receipt) {
+        const receiptData = response.data.receipt;
   
         // Mapear los items del recibo al formato CommandTableRow
         return receiptData.items.map((item, index) => ({
@@ -132,9 +121,9 @@ const Demo = () => {
         }));
       } else {
         // Si el backend devuelve un raw text, lo podemos procesar con la lógica existente
-        if (data?.data?.rawText) {
-          console.log("Texto detectado por OCR (desde backend):", data.data.rawText);
-          return parseCommandText(data.data.rawText);
+        if (response?.data?.rawText) {
+          console.log("Texto detectado por OCR (desde backend):", response.data.rawText);
+          return parseCommandText(response.data.rawText);
         }
   
         toast({
