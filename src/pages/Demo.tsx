@@ -248,7 +248,12 @@ const Demo = () => {
           ...command,
           items: command.items.map(item => {
             if (item.id === itemId) {
-              return { ...item, [field]: value };
+              const updatedItem = { ...item, [field]: value };
+              // Recalculate total if quantity or price is changed
+              if (field === 'cantidad' || field === 'precio') {
+                updatedItem.total = updatedItem.cantidad * updatedItem.precio;
+              }
+              return updatedItem;
             }
             return item;
           })
