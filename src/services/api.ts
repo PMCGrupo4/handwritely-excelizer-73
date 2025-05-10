@@ -102,7 +102,12 @@ export const commandService = {
   // Obtener todos los comandos de un usuario
   getUserCommands: async (userId: string) => {
     try {
-      const response = await api.get(`/api/commands/${userId}`);
+      const response = await axios.get(`https://handsheetbackend.netlify.app/.netlify/functions/commands/${userId}`, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 60000
+      });
       return response.data;
     } catch (error) {
       console.error('Error fetching user commands:', error);
@@ -170,7 +175,7 @@ export const commandService = {
    */
   async getCommands(userId: string) {
     try {
-      const response = await axios.get(`https://handsheetbackend.netlify.app/api/commands/${userId}`, {
+      const response = await axios.get(`https://handsheetbackend.netlify.app/.netlify/functions/commands/${userId}`, {
         headers: {
           'Content-Type': 'application/json'
         },
@@ -202,7 +207,7 @@ export const commandService = {
     }>;
   }) {
     try {
-      const response = await axios.put(`https://handsheetbackend.netlify.app/api/commands/${id}`, commandData, {
+      const response = await axios.put(`https://handsheetbackend.netlify.app/.netlify/functions/commands/${id}`, commandData, {
         headers: {
           'Content-Type': 'application/json'
         },
@@ -222,7 +227,7 @@ export const commandService = {
    */
   async deleteCommand(id: string) {
     try {
-      const response = await axios.delete(`https://handsheetbackend.netlify.app/api/commands/${id}`, {
+      const response = await axios.delete(`https://handsheetbackend.netlify.app/.netlify/functions/commands/${id}`, {
         headers: {
           'Content-Type': 'application/json'
         },
@@ -254,7 +259,7 @@ export const commandService = {
   }) {
     try {
       // Use the full URL to the backend API
-      const response = await axios.post('https://handsheetbackend.netlify.app/api/commands', commandData, {
+      const response = await axios.post('https://handsheetbackend.netlify.app/.netlify/functions/commands', commandData, {
         headers: {
           'Content-Type': 'application/json'
         },
