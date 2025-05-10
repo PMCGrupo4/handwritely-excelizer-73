@@ -30,6 +30,7 @@ const Demo = () => {
   const [commands, setCommands] = useState<CommandItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentCommandId, setCurrentCommandId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Maneja la subida de imágenes
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -272,6 +273,10 @@ const Demo = () => {
     });
   };
 
+  const toggleEditMode = () => {
+    setIsEditing(!isEditing);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Header */}
@@ -441,6 +446,7 @@ const Demo = () => {
                                     type="text"
                                     value={item.producto}
                                     onChange={(e) => handleEditChange(item.id, 'producto', e.target.value)}
+                                    disabled={!isEditing}
                                   />
                                 </TableCell>
                                 <TableCell>
@@ -448,6 +454,7 @@ const Demo = () => {
                                     type="number"
                                     value={item.cantidad}
                                     onChange={(e) => handleEditChange(item.id, 'cantidad', parseFloat(e.target.value))}
+                                    disabled={!isEditing}
                                   />
                                 </TableCell>
                                 <TableCell>
@@ -455,6 +462,7 @@ const Demo = () => {
                                     type="number"
                                     value={item.precio}
                                     onChange={(e) => handleEditChange(item.id, 'precio', parseFloat(e.target.value))}
+                                    disabled={!isEditing}
                                   />
                                 </TableCell>
                                 <TableCell>{item.total}</TableCell>
@@ -462,10 +470,16 @@ const Demo = () => {
                             ))}
                           </TableBody>
                         </Table>
-                        <Button onClick={() => {
-                          setCurrentCommandId(command.id);
-                          saveCommand();
-                        }}>Guardar cambios</Button>
+                        <Button onClick={toggleEditMode}>
+                          {isEditing ? 'Cancelar' : 'Editar'}
+                        </Button>
+                        {isEditing && (
+                          <Button onClick={() => {
+                            setCurrentCommandId(command.id);
+                            saveCommand();
+                            toggleEditMode();
+                          }}>Guardar cambios</Button>
+                        )}
                       </div>
                     ))}
                   </div>
