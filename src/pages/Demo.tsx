@@ -30,7 +30,7 @@ const Demo = () => {
   const [commands, setCommands] = useState<CommandItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentCommandId, setCurrentCommandId] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [editingCommands, setEditingCommands] = useState<{ [key: string]: boolean }>({});
 
   // Maneja la subida de imágenes
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -273,8 +273,11 @@ const Demo = () => {
     });
   };
 
-  const toggleEditMode = () => {
-    setIsEditing(!isEditing);
+  const toggleEditMode = (commandId: string) => {
+    setEditingCommands(prev => ({
+      ...prev,
+      [commandId]: !prev[commandId]
+    }));
   };
 
   return (
@@ -446,7 +449,7 @@ const Demo = () => {
                                     type="text"
                                     value={item.producto}
                                     onChange={(e) => handleEditChange(item.id, 'producto', e.target.value)}
-                                    disabled={!isEditing}
+                                    disabled={!editingCommands[command.id]}
                                   />
                                 </TableCell>
                                 <TableCell>
@@ -454,7 +457,7 @@ const Demo = () => {
                                     type="number"
                                     value={item.cantidad}
                                     onChange={(e) => handleEditChange(item.id, 'cantidad', parseFloat(e.target.value))}
-                                    disabled={!isEditing}
+                                    disabled={!editingCommands[command.id]}
                                   />
                                 </TableCell>
                                 <TableCell>
@@ -462,7 +465,7 @@ const Demo = () => {
                                     type="number"
                                     value={item.precio}
                                     onChange={(e) => handleEditChange(item.id, 'precio', parseFloat(e.target.value))}
-                                    disabled={!isEditing}
+                                    disabled={!editingCommands[command.id]}
                                   />
                                 </TableCell>
                                 <TableCell>{item.total}</TableCell>
@@ -470,14 +473,14 @@ const Demo = () => {
                             ))}
                           </TableBody>
                         </Table>
-                        <Button onClick={toggleEditMode}>
-                          {isEditing ? 'Cancelar' : 'Editar'}
+                        <Button onClick={() => toggleEditMode(command.id)}>
+                          {editingCommands[command.id] ? 'Cancelar' : 'Editar'}
                         </Button>
-                        {isEditing && (
+                        {editingCommands[command.id] && (
                           <Button onClick={() => {
                             setCurrentCommandId(command.id);
                             saveCommand();
-                            toggleEditMode();
+                            toggleEditMode(command.id);
                           }}>Guardar cambios</Button>
                         )}
                       </div>
