@@ -81,8 +81,10 @@ const CTASection = () => {
               </div>
               
               <div className="flex items-baseline mb-6">
-                <span className="text-4xl font-bold text-white">$9.99</span>
-                <span className="text-white/70 ml-2">{t('cta.plan.period')}</span>
+                <span className="text-4xl font-bold text-white">
+                  {t('pricing.currency')} {t('pricing.amount')}
+                </span>
+                <span className="text-white/70 ml-2">{t('pricing.period')}</span>
               </div>
               
               <div className="space-y-3 mb-8">
