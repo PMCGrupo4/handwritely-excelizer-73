@@ -102,7 +102,7 @@ export const commandService = {
   // Obtener todos los comandos de un usuario
   getUserCommands: async (userId: string) => {
     try {
-      const response = await axios.get(`https://handsheetbackend.netlify.app/.netlify/functions/commands/${userId}`, {
+      const response = await axios.get(`https://handsheetbackend.netlify.app/api/commands/${userId}`, {
         headers: {
           'Content-Type': 'application/json'
         },
