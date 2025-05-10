@@ -218,6 +218,32 @@ export const commandService = {
       console.error('Error deleting command:', error);
       throw error;
     }
+  },
+
+  /**
+   * Create a new command
+   * @param commandData - The command data to create
+   * @returns Promise with the created command data
+   */
+  async createNewCommand(commandData: {
+    userId: string;
+    imageSrc: string;
+    timestamp: string;
+    items: Array<{
+      id: string;
+      producto: string;
+      cantidad: number;
+      precio: number;
+      total: number;
+    }>;
+  }) {
+    try {
+      const response = await axios.post('/api/commands', commandData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating new command:', error);
+      throw error;
+    }
   }
 };
 

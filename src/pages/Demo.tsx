@@ -222,7 +222,14 @@ const Demo = () => {
     // Save the new command to backend if userId is available
     if (userId) {
       try {
-        await commandService.updateCommand(newCommand.id, newCommand);
+        // Use createNewCommand to properly create a new command in the database
+        await commandService.createNewCommand({
+          userId,
+          imageSrc: newCommand.imageSrc,
+          timestamp: newCommand.timestamp,
+          items: newCommand.items
+        });
+        
         toast({
           title: "¡Comanda agregada!",
           description: "La comanda ha sido guardada en el servidor.",
