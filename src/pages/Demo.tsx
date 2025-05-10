@@ -275,10 +275,21 @@ const Demo = () => {
   };
 
   const toggleEditMode = (commandId: string) => {
-    setEditingCommands(prev => ({
-      ...prev,
-      [commandId]: !prev[commandId]
-    }));
+    setEditingCommands(prev => {
+      const isCurrentlyEditing = prev[commandId];
+      const newEditingState = !isCurrentlyEditing;
+
+      // If switching to edit mode, ensure the command is saved first
+      if (newEditingState) {
+        setCurrentCommandId(commandId);
+        saveCommand();
+      }
+
+      return {
+        ...prev,
+        [commandId]: newEditingState
+      };
+    });
   };
 
   return (
