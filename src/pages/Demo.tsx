@@ -51,19 +51,19 @@ const Demo = () => {
     try {
       setIsProcessing(true);
       const response = await commandService.getCommands(userId);
-      if (response && response.success && response.data) {
-        setCommands(response.data);
+      if (response && response.length > 0) {
+        setCommands(response);
         
         // Initialize editing state for each command
         const editingState: { [key: string]: boolean } = {};
-        response.data.forEach((command: CommandItem) => {
+        response.forEach((command: CommandItem) => {
           editingState[command.id] = false;
         });
         setEditingCommands(editingState);
         
         toast({
           title: "Comandas cargadas",
-          description: `Se han cargado ${response.data.length} comandas.`,
+          description: `Se han cargado ${response.length} comandas.`,
         });
       }
     } catch (error) {

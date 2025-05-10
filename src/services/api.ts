@@ -182,15 +182,16 @@ export const commandService = {
    */
   async getCommands(userId: string) {
     try {
-      const response = await axios.get(`https://handsheetbackend.netlify.app/.netlify/functions/commands/${userId}`, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        timeout: 60000
-      });
-      return response.data;
+      const { data, error } = await supabase
+        .from('ocr_results')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      return data;
     } catch (error) {
-      console.error('Error fetching commands:', error);
+      console.error('Error fetching user commands:', error);
       throw error;
     }
   },
@@ -214,13 +215,19 @@ export const commandService = {
     }>;
   }) {
     try {
-      const response = await axios.put(`https://handsheetbackend.netlify.app/.netlify/functions/commands/${id}`, commandData, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        timeout: 60000
-      });
-      return response.data;
+      const { data, error } = await supabase
+        .from('ocr_results')
+        .update({
+          image_url: commandData.imageSrc,
+          timestamp: commandData.timestamp,
+          items: commandData.items
+        })
+        .eq('id', id)
+        .select();
+        
+      if (error) throw error;
+      
+      return { success: true, data };
     } catch (error) {
       console.error('Error updating command:', error);
       throw error;
@@ -234,13 +241,14 @@ export const commandService = {
    */
   async deleteCommand(id: string) {
     try {
-      const response = await axios.delete(`https://handsheetbackend.netlify.app/.netlify/functions/commands/${id}`, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        timeout: 60000
-      });
-      return response.data;
+      const { error } = await supabase
+        .from('ocr_results')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      return { success: true };
     } catch (error) {
       console.error('Error deleting command:', error);
       throw error;
@@ -265,14 +273,20 @@ export const commandService = {
     }>;
   }) {
     try {
-      // Use the full URL to the backend API
-      const response = await axios.post('https://handsheetbackend.netlify.app/.netlify/functions/commands', commandData, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        timeout: 60000
-      });
-      return response.data;
+      const { data, error } = await supabase
+        .from('ocr_results')
+        .insert({
+          id: `cmd-${Date.now()}`,
+          user_id: commandData.userId,
+          image_url: commandData.imageSrc,
+          timestamp: commandData.timestamp,
+          items: commandData.items
+        })
+        .select();
+        
+      if (error) throw error;
+      
+      return { success: true, data };
     } catch (error) {
       console.error('Error creating new command:', error);
       throw error;
