@@ -29,6 +29,7 @@ const Demo = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [commands, setCommands] = useState<CommandItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [currentCommandId, setCurrentCommandId] = useState<string | null>(null);
 
   // Maneja la subida de imágenes
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -240,9 +241,9 @@ const Demo = () => {
   const { totalItems, totalAmount } = calculateTotals();
 
   // Función para manejar cambios en el formulario de edición
-  const handleEditChange = (commandId: string, itemId: string, field: keyof CommandTableRow, value: string | number) => {
+  const handleEditChange = (itemId: string, field: keyof CommandTableRow, value: string | number) => {
     setCommands(prevCommands => prevCommands.map(command => {
-      if (command.id === commandId) {
+      if (command.id === currentCommandId) {
         return {
           ...command,
           items: command.items.map(item => {
@@ -258,7 +259,7 @@ const Demo = () => {
   };
 
   // Función para guardar los cambios
-  const saveCommand = (commandId: string) => {
+  const saveCommand = () => {
     // Aquí puedes implementar la lógica para guardar los cambios en el backend
     toast({
       title: "Cambios guardados",
@@ -414,61 +415,54 @@ const Demo = () => {
                 
                 {commands.length > 0 ? (
                   <div className="space-y-6">
-                    <div className="border rounded-lg overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Producto</TableHead>
-                            <TableHead className="text-right">Cantidad</TableHead>
-                            <TableHead className="text-right">P. Unitario</TableHead>
-                            <TableHead className="text-right">Total</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {commands.flatMap(cmd => 
-                            cmd.items.map(item => (
+                    {commands.map(command => (
+                      <div key={command.id} className="command-preview">
+                        <h3>Comanda procesada el {command.timestamp}</h3>
+                        <img src={command.imageSrc} alt="Comanda" className="command-image" />
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Producto</TableHead>
+                              <TableHead>Cantidad</TableHead>
+                              <TableHead>Precio</TableHead>
+                              <TableHead>Total</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {command.items.map(item => (
                               <TableRow key={item.id}>
-                                <TableCell className="font-medium">{item.producto}</TableCell>
-                                <TableCell className="text-right">{item.cantidad}</TableCell>
-                                <TableCell className="text-right">${item.precio.toLocaleString('es-ES')}</TableCell>
-                                <TableCell className="text-right">${item.total.toLocaleString('es-ES')}</TableCell>
+                                <TableCell>
+                                  <input
+                                    type="text"
+                                    value={item.producto}
+                                    onChange={(e) => handleEditChange(item.id, 'producto', e.target.value)}
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <input
+                                    type="number"
+                                    value={item.cantidad}
+                                    onChange={(e) => handleEditChange(item.id, 'cantidad', parseFloat(e.target.value))}
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <input
+                                    type="number"
+                                    value={item.precio}
+                                    onChange={(e) => handleEditChange(item.id, 'precio', parseFloat(e.target.value))}
+                                  />
+                                </TableCell>
+                                <TableCell>{item.total}</TableCell>
                               </TableRow>
-                            ))
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-                    
-                    <div className="pt-4 border-t">
-                      <h3 className="text-sm font-medium mb-3">Comandas procesadas</h3>
-                      <div className="space-y-2">
-                        {commands.map(cmd => (
-                          <div key={cmd.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                            <div className="flex items-center">
-                              <img 
-                                src={cmd.imageSrc} 
-                                alt="Miniatura comanda" 
-                                className="h-10 w-10 object-cover rounded-md mr-3" 
-                              />
-                              <div>
-                                <p className="text-sm">{cmd.timestamp}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {cmd.items.length} ítem(s) · Total: ${cmd.items.reduce((sum, item) => sum + item.total, 0).toLocaleString('es-ES')}
-                                </p>
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => removeCommand(cmd.id)}
-                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
+                            ))}
+                          </TableBody>
+                        </Table>
+                        <Button onClick={() => {
+                          setCurrentCommandId(command.id);
+                          saveCommand();
+                        }}>Guardar cambios</Button>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-center p-6">
@@ -486,53 +480,6 @@ const Demo = () => {
             </div>
           </div>
         </div>
-
-        {/* Mostrar comandos procesados */}
-        {commands.map(command => (
-          <div key={command.id} className="command-preview">
-            <h3>Comanda procesada el {command.timestamp}</h3>
-            <img src={command.imageSrc} alt="Comanda" className="command-image" />
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Producto</TableHead>
-                  <TableHead>Cantidad</TableHead>
-                  <TableHead>Precio</TableHead>
-                  <TableHead>Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {command.items.map(item => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <input
-                        type="text"
-                        value={item.producto}
-                        onChange={(e) => handleEditChange(command.id, item.id, 'producto', e.target.value)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <input
-                        type="number"
-                        value={item.cantidad}
-                        onChange={(e) => handleEditChange(command.id, item.id, 'cantidad', parseFloat(e.target.value))}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <input
-                        type="number"
-                        value={item.precio}
-                        onChange={(e) => handleEditChange(command.id, item.id, 'precio', parseFloat(e.target.value))}
-                      />
-                    </TableCell>
-                    <TableCell>{item.total}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <Button onClick={() => saveCommand(command.id)}>Guardar cambios</Button>
-          </div>
-        ))}
       </main>
 
       <footer className="mt-auto py-6 text-center text-sm text-muted-foreground">
