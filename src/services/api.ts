@@ -163,10 +163,56 @@ export const commandService = {
     }
   },
 
-  // Eliminar un comando
-  deleteCommand: async (commandId: string) => {
+  /**
+   * Get commands for a specific user
+   * @param userId - The user ID to fetch commands for
+   * @returns Promise with the commands data
+   */
+  async getCommands(userId: string) {
     try {
-      const response = await api.delete(`/api/commands/${commandId}`);
+      const response = await axios.get(`/api/commands/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching commands:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update a specific command
+   * @param id - The command ID to update
+   * @param commandData - The updated command data
+   * @returns Promise with the updated command data
+   */
+  async updateCommand(id: string, commandData: {
+    id?: string;
+    imageSrc?: string;
+    timestamp?: string;
+    items: Array<{
+      id: string;
+      producto: string;
+      cantidad: number;
+      precio: number;
+      total: number;
+    }>;
+  }) {
+    try {
+      const response = await axios.put(`/api/commands/${id}`, commandData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating command:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a specific command
+   * @param id - The command ID to delete
+   * @returns Promise with the result of the deletion
+   */
+  async deleteCommand(id: string) {
+    try {
+      const response = await axios.delete(`/api/commands/${id}`);
       return response.data;
     } catch (error) {
       console.error('Error deleting command:', error);
