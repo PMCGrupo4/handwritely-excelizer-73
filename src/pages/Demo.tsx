@@ -170,6 +170,7 @@ const Demo = () => {
     };
     
     setCommands(prev => [...prev, newCommand]);
+    setEditingCommands(prev => ({ ...prev, [newCommand.id]: false }));
     setUploadedImage(null);
     
     toast({
