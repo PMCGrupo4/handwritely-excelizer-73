@@ -2,14 +2,9 @@ import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 
 // Supabase client initialization
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  console.error('Supabase URL or Key is missing. Please check your environment variables.');
-}
-
-const supabase = createClient(supabaseUrl || '', supabaseKey || '');
+const supabaseUrl = 'https://jcvhlqkkfnxniqxgxucm.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpjdmhscWtrZm54bmlxeGd4dWNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDI4MjE0MTcsImV4cCI6MjAxODM5NzQxN30.pDYfbIXJDshomzA3-XVphtUg3xPEbMGiKFJVOkE9CYE';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Configuración base de axios
 const api = axios.create({

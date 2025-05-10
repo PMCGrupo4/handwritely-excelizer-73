@@ -51,19 +51,36 @@ const Demo = () => {
     try {
       setIsProcessing(true);
       const response = await commandService.getCommands(userId);
-      if (response && response.length > 0) {
-        setCommands(response);
+      
+      // Supabase returns an array directly
+      if (response && Array.isArray(response) && response.length > 0) {
+        // Transform the Supabase data format to match our CommandItem format
+        const transformedCommands = response.map(item => ({
+          id: item.id,
+          imageSrc: item.image_url || item.imageSrc,
+          timestamp: item.timestamp,
+          items: item.items || []
+        }));
+        
+        setCommands(transformedCommands);
         
         // Initialize editing state for each command
         const editingState: { [key: string]: boolean } = {};
-        response.forEach((command: CommandItem) => {
+        transformedCommands.forEach(command => {
           editingState[command.id] = false;
         });
         setEditingCommands(editingState);
         
         toast({
           title: "Comandas cargadas",
-          description: `Se han cargado ${response.length} comandas.`,
+          description: `Se han cargado ${transformedCommands.length} comandas.`,
+        });
+      } else {
+        setCommands([]);
+        setEditingCommands({});
+        toast({
+          title: "No hay comandas",
+          description: "No se encontraron comandas guardadas.",
         });
       }
     } catch (error) {
@@ -257,19 +274,11 @@ const Demo = () => {
     // Delete from backend if userId is available
     if (userId) {
       commandService.deleteCommand(id)
-        .then(response => {
-          if (response && response.success) {
-            toast({
-              title: "Comanda eliminada",
-              description: "La comanda ha sido eliminada del servidor.",
-            });
-          } else {
-            toast({
-              title: "Error",
-              description: "No se pudo eliminar la comanda del servidor. Se ha eliminado localmente.",
-              variant: "destructive",
-            });
-          }
+        .then(() => {
+          toast({
+            title: "Comanda eliminada",
+            description: "La comanda ha sido eliminada del servidor.",
+          });
         })
         .catch(error => {
           console.error("Error deleting command:", error);
@@ -287,7 +296,7 @@ const Demo = () => {
     }
   };
 
-  // Genera y descarga el archivo Excel
+  // Genera y descarga el archivo Excel.
   const handleGenerateExcel = () => {
     if (commands.length === 0) {
       toast({
@@ -375,18 +384,10 @@ const Demo = () => {
     if (userId) {
       commandService.updateCommand(currentCommandId, commandToUpdate)
         .then(response => {
-          if (response && response.success) {
-            toast({
-              title: "Cambios guardados",
-              description: "Los cambios han sido guardados exitosamente.",
-            });
-          } else {
-            toast({
-              title: "Error",
-              description: "No se pudieron guardar los cambios. Inténtalo de nuevo.",
-              variant: "destructive",
-            });
-          }
+          toast({
+            title: "Cambios guardados",
+            description: "Los cambios han sido guardados exitosamente.",
+          });
         })
         .catch(error => {
           console.error("Error saving command:", error);
