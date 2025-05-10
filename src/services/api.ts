@@ -1,4 +1,10 @@
 import axios from 'axios';
+import { createClient } from '@supabase/supabase-js';
+
+// Supabase client initialization
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'your-fallback-supabase-url';
+const supabaseKey = import.meta.env.VITE_SUPABASE_KEY || 'your-fallback-anon-key';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Configuración base de axios
 const api = axios.create({
@@ -102,13 +108,14 @@ export const commandService = {
   // Obtener todos los comandos de un usuario
   getUserCommands: async (userId: string) => {
     try {
-      const response = await axios.get(`https://handsheetbackend.netlify.app/api/commands/${userId}`, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        timeout: 60000
-      });
-      return response.data;
+      const { data, error } = await supabase
+        .from('ocr_results')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      return data;
     } catch (error) {
       console.error('Error fetching user commands:', error);
       throw error;
