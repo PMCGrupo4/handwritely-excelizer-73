@@ -68,11 +68,7 @@ const Demo = () => {
       }
     } catch (error) {
       console.error("Error loading commands:", error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las comandas. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
+ 
     } finally {
       setIsProcessing(false);
     }
@@ -143,11 +139,7 @@ const Demo = () => {
   // Procesa la imagen con el backend en lugar de Tesseract.js local
   const processImageWithOCR = async (): Promise<CommandTableRow[]> => {
     if (!uploadedImage) {
-      toast({
-        title: "Error de procesamiento",
-        description: "No hay imagen para procesar",
-        variant: "destructive",
-      });
+ 
       return [];
     }
   
@@ -174,20 +166,12 @@ const Demo = () => {
           return parseCommandText(response.data.rawText);
         }
   
-        toast({
-          title: "Error de procesamiento",
-          description: "El servidor no devolvió datos en el formato esperado. Inténtalo de nuevo.",
-          variant: "destructive",
-        });
+
         return [];
       }
     } catch (error) {
       console.error("Error en OCR (backend):", error);
-      toast({
-        title: "Error de procesamiento",
-        description: "No se pudo conectar con el servidor para procesar la imagen. Verifica tu conexión a internet.",
-        variant: "destructive",
-      });
+
       return [];
     } finally {
       setIsProcessing(false);
@@ -236,11 +220,7 @@ const Demo = () => {
         });
       } catch (error) {
         console.error("Error saving new command:", error);
-        toast({
-          title: "¡Comanda agregada localmente!",
-          description: "No se pudo guardar en el servidor. Los cambios son solo locales.",
-          variant: "destructive",
-        });
+
       }
     } else {
       toast({
@@ -381,20 +361,12 @@ const Demo = () => {
               description: "Los cambios han sido guardados exitosamente.",
             });
           } else {
-            toast({
-              title: "Error",
-              description: "No se pudieron guardar los cambios. Inténtalo de nuevo.",
-              variant: "destructive",
-            });
+      ;
           }
         })
         .catch(error => {
           console.error("Error saving command:", error);
-          toast({
-            title: "Error",
-            description: "No se pudieron guardar los cambios. Inténtalo de nuevo.",
-            variant: "destructive",
-          });
+
         });
     } else {
       // If no userId (local mode), just show a toast
