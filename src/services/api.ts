@@ -3,9 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // Supabase client initialization
 const supabaseUrl = 'https://hvuyfhqufioxxpksixy.supabase.co';
-// IMPORTANTE: Esta clave debe ser actualizada desde el panel de Supabase (Project Settings > API)
-// La clave actual corresponde al proyecto anterior
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpjdmhscWtrZm54bmlxeGd4dWNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDI4MjE0MTcsImV4cCI6MjAxODM5NzQxN30.pDYfbIXJDshomzA3-XVphtUg3xPEbMGiKFJVOkE9CYE';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2dXlmaHF1ZmlveHh0cGtzaXh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDc0MjcsImV4cCI6MjA2MDM4MzQyN30._hd7tKrIe-xuCj5z6oEifmujEjeWV09o0bB77FLzxX0';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Configuración base de axios
@@ -119,7 +117,7 @@ export const commandService = {
       if (error) throw error;
       return data;
     } catch (error: unknown) {
-      if (error instanceof Error && error.message.includes('Failed to fetch')) {
+      if (error instanceof Error && error.message && error.message.includes('Failed to fetch')) {
         console.error('Error de conectividad con Supabase: No se pudo resolver el dominio. Verifica tu conexión a internet o si el proyecto Supabase sigue activo.');
       } else {
         console.error('Error fetching user commands:', error);
@@ -197,7 +195,7 @@ export const commandService = {
       if (error) throw error;
       return data;
     } catch (error: unknown) {
-      if (error instanceof Error && error.message.includes('Failed to fetch')) {
+      if (error instanceof Error && error.message && error.message.includes('Failed to fetch')) {
         console.error('Error de conectividad con Supabase: No se pudo resolver el dominio. Verifica tu conexión a internet o si el proyecto Supabase sigue activo.');
       } else {
         console.error('Error fetching user commands:', error);
