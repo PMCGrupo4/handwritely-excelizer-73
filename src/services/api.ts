@@ -190,20 +190,24 @@ export const commandService = {
    */
   async getCommands(userId: string) {
     try {
-      const { data, error } = await supabase
-        .from('ocr_results')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      return data;
-    } catch (error: unknown) {
-      if (error instanceof Error && error.message && error.message.includes('Failed to fetch')) {
-        console.error('Error de conectividad con Supabase: No se pudo resolver el dominio. Verifica tu conexión a internet o si el proyecto Supabase sigue activo.');
-      } else {
-        console.error('Error fetching user commands:', error);
+      const response = await fetch('https://handsheetbackend.netlify.app/.netlify/functions/getCommands', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId }),
+        credentials: 'include'
+      });
+      
+      const responseData = await response.json();
+      
+      if (!responseData.success) {
+        throw new Error(responseData.error || 'Error desconocido al obtener comandas');
       }
+      
+      return responseData.data;
+    } catch (error) {
+      console.error('Error fetching user commands:', error);
       throw error;
     }
   },
