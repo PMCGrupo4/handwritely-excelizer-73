@@ -190,6 +190,7 @@ export const commandService = {
    */
   async getCommands(userId: string) {
     try {
+      // Primero intentamos el método POST
       const response = await fetch('https://handsheetbackend.netlify.app/.netlify/functions/getCommands', {
         method: 'POST',
         headers: {
@@ -198,6 +199,13 @@ export const commandService = {
         body: JSON.stringify({ userId }),
         credentials: 'include'
       });
+      
+      if (!response.ok) {
+        console.error(`Error HTTP: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
       
       const responseData = await response.json();
       
@@ -208,6 +216,23 @@ export const commandService = {
       return responseData.data;
     } catch (error) {
       console.error('Error fetching user commands:', error);
+      
+      // Si hay un error, intentamos el método GET como fallback
+      try {
+        const fallbackResponse = await fetch('https://handsheetbackend.netlify.app/.netlify/functions/getCommands', {
+          method: 'GET',
+          credentials: 'include'
+        });
+        
+        const fallbackData = await fallbackResponse.json();
+        if (fallbackData.success) {
+          console.log('Usando datos de prueba como fallback');
+          return fallbackData.data;
+        }
+      } catch (fallbackError) {
+        console.error('También falló el método de respaldo:', fallbackError);
+      }
+      
       throw error;
     }
   },
