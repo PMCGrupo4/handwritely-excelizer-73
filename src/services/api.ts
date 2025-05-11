@@ -1,10 +1,4 @@
 import axios from 'axios';
-import { createClient } from '@supabase/supabase-js';
-
-// Supabase client initialization
-const supabaseUrl = 'https://hvuyfhqufioxxpksixy.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2dXlmaHF1ZmlveHh0cGtzaXh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDc0MjcsImV4cCI6MjA2MDM4MzQyN30._hd7tKrIe-xuCj5z6oEifmujEjeWV09o0bB77FLzxX0';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Configuración base de axios
 const api = axios.create({
@@ -108,22 +102,8 @@ export const commandService = {
   // Obtener todos los comandos de un usuario
   getUserCommands: async (userId: string) => {
     try {
-      const response = await fetch('https://handsheetbackend.netlify.app/.netlify/functions/getCommands', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ userId }),
-        credentials: 'include'
-      });
-      
-      const responseData = await response.json();
-      
-      if (!responseData.success) {
-        throw new Error(responseData.error || 'Error desconocido al obtener comandas');
-      }
-      
-      return responseData.data;
+      const response = await api.get(`/api/commands/${userId}`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching user commands:', error);
       throw error;
@@ -190,49 +170,10 @@ export const commandService = {
    */
   async getCommands(userId: string) {
     try {
-      // Primero intentamos el método POST
-      const response = await fetch('https://handsheetbackend.netlify.app/.netlify/functions/getCommands', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ userId }),
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        console.error(`Error HTTP: ${response.status}`);
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`Error HTTP: ${response.status}`);
-      }
-      
-      const responseData = await response.json();
-      
-      if (!responseData.success) {
-        throw new Error(responseData.error || 'Error desconocido al obtener comandas');
-      }
-      
-      return responseData.data;
+      const response = await axios.get(`/api/commands/${userId}`);
+      return response.data;
     } catch (error) {
-      console.error('Error fetching user commands:', error);
-      
-      // Si hay un error, intentamos el método GET como fallback
-      try {
-        const fallbackResponse = await fetch('https://handsheetbackend.netlify.app/.netlify/functions/getCommands', {
-          method: 'GET',
-          credentials: 'include'
-        });
-        
-        const fallbackData = await fallbackResponse.json();
-        if (fallbackData.success) {
-          console.log('Usando datos de prueba como fallback');
-          return fallbackData.data;
-        }
-      } catch (fallbackError) {
-        console.error('También falló el método de respaldo:', fallbackError);
-      }
-      
+      console.error('Error fetching commands:', error);
       throw error;
     }
   },
@@ -256,19 +197,8 @@ export const commandService = {
     }>;
   }) {
     try {
-      const { data, error } = await supabase
-        .from('ocr_results')
-        .update({
-          image_url: commandData.imageSrc,
-          timestamp: commandData.timestamp,
-          items: commandData.items
-        })
-        .eq('id', id)
-        .select();
-        
-      if (error) throw error;
-      
-      return { success: true, data };
+      const response = await axios.put(`/api/commands/${id}`, commandData);
+      return response.data;
     } catch (error) {
       console.error('Error updating command:', error);
       throw error;
@@ -282,14 +212,8 @@ export const commandService = {
    */
   async deleteCommand(id: string) {
     try {
-      const { error } = await supabase
-        .from('ocr_results')
-        .delete()
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      return { success: true };
+      const response = await axios.delete(`/api/commands/${id}`);
+      return response.data;
     } catch (error) {
       console.error('Error deleting command:', error);
       throw error;
@@ -314,20 +238,8 @@ export const commandService = {
     }>;
   }) {
     try {
-      const { data, error } = await supabase
-        .from('ocr_results')
-        .insert({
-          id: `cmd-${Date.now()}`,
-          user_id: commandData.userId,
-          image_url: commandData.imageSrc,
-          timestamp: commandData.timestamp,
-          items: commandData.items
-        })
-        .select();
-        
-      if (error) throw error;
-      
-      return { success: true, data };
+      const response = await axios.post('/api/commands', commandData);
+      return response.data;
     } catch (error) {
       console.error('Error creating new command:', error);
       throw error;

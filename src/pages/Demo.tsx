@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Camera, FileImage, FileSpreadsheet, ArrowLeft, Plus, Download, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -6,6 +6,7 @@ import { toast } from '@/components/ui/use-toast';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { createWorker } from 'tesseract.js';
 import * as XLSX from 'xlsx';
+import { commandService } from '@/services/api';
 import axios from 'axios';
 
 interface CommandItem {
@@ -30,6 +31,52 @@ const Demo = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentCommandId, setCurrentCommandId] = useState<string | null>(null);
   const [editingCommands, setEditingCommands] = useState<{ [key: string]: boolean }>({});
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Load user commands on mount
+  useEffect(() => {
+    // For demo purposes, you can set a default user ID
+    // In a real app, this would come from authentication
+    const demoUserId = "demo-user-123";
+    setUserId(demoUserId);
+    
+    // Load commands for the user
+    if (demoUserId) {
+      loadUserCommands(demoUserId);
+    }
+  }, []);
+
+  // Load commands from the backend
+  const loadUserCommands = async (userId: string) => {
+    try {
+      setIsProcessing(true);
+      const response = await commandService.getCommands(userId);
+      if (response && response.success && response.data) {
+        setCommands(response.data);
+        
+        // Initialize editing state for each command
+        const editingState: { [key: string]: boolean } = {};
+        response.data.forEach((command: CommandItem) => {
+          editingState[command.id] = false;
+        });
+        setEditingCommands(editingState);
+        
+        toast({
+          title: "Comandas cargadas",
+          description: `Se han cargado ${response.data.length} comandas.`,
+        });
+      }
+    } catch (error) {
+      console.error("Error loading commands:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las comandas. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   // Maneja la subida de imágenes
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,7 +140,7 @@ const Demo = () => {
       });
   };
 
-  // Procesa la imagen con OCR local utilizando Tesseract.js
+  // Procesa la imagen con el backend en lugar de Tesseract.js local
   const processImageWithOCR = async (): Promise<CommandTableRow[]> => {
     if (!uploadedImage) {
       toast({
@@ -107,19 +154,38 @@ const Demo = () => {
     setIsProcessing(true);
   
     try {
-      // Usar Tesseract.js para procesar la imagen localmente
-      const worker = await createWorker('spa');
-      const ret = await worker.recognize(uploadedImage);
-      const text = ret.data.text;
-      await worker.terminate();
-
-      console.log("Texto detectado por OCR:", text);
-      return parseCommandText(text);
+      const response = await commandService.processImageOCR(uploadedImage);
+      
+      if (response && response.success && response.data && response.data.receipt) {
+        const receiptData = response.data.receipt;
+  
+        // Mapear los items del recibo al formato CommandTableRow
+        return receiptData.items.map((item, index) => ({
+          id: `item-${Date.now()}-${index}`,
+          producto: item.name,
+          cantidad: item.quantity,
+          precio: item.price,
+          total: item.subtotal
+        }));
+      } else {
+        // Si el backend devuelve un raw text, lo podemos procesar con la lógica existente
+        if (response?.data?.rawText) {
+          console.log("Texto detectado por OCR (desde backend):", response.data.rawText);
+          return parseCommandText(response.data.rawText);
+        }
+  
+        toast({
+          title: "Error de procesamiento",
+          description: "El servidor no devolvió datos en el formato esperado. Inténtalo de nuevo.",
+          variant: "destructive",
+        });
+        return [];
+      }
     } catch (error) {
-      console.error("Error en OCR local:", error);
+      console.error("Error en OCR (backend):", error);
       toast({
         title: "Error de procesamiento",
-        description: "No se pudo procesar la imagen localmente.",
+        description: "No se pudo conectar con el servidor para procesar la imagen. Verifica tu conexión a internet.",
         variant: "destructive",
       });
       return [];
@@ -153,23 +219,75 @@ const Demo = () => {
     setEditingCommands(prev => ({ ...prev, [newCommand.id]: false }));
     setUploadedImage(null);
     
-    toast({
-      title: "¡Comanda agregada!",
-      description: "Revisa que los datos detectados sean correctos.",
-    });
+    // Save the new command to backend if userId is available
+    if (userId) {
+      try {
+        // Use createNewCommand to properly create a new command in the database
+        await commandService.createNewCommand({
+          userId,
+          imageSrc: newCommand.imageSrc,
+          timestamp: newCommand.timestamp,
+          items: newCommand.items
+        });
+        
+        toast({
+          title: "¡Comanda agregada!",
+          description: "La comanda ha sido guardada en el servidor.",
+        });
+      } catch (error) {
+        console.error("Error saving new command:", error);
+        toast({
+          title: "¡Comanda agregada localmente!",
+          description: "No se pudo guardar en el servidor. Los cambios son solo locales.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "¡Comanda agregada!",
+        description: "Revisa que los datos detectados sean correctos.",
+      });
+    }
   };
 
   // Elimina una comanda del listado
   const removeCommand = (id: string) => {
     setCommands(prev => prev.filter(cmd => cmd.id !== id));
     
-    toast({
-      title: "Comanda eliminada",
-      description: "La comanda ha sido eliminada de la vista previa.",
-    });
+    // Delete from backend if userId is available
+    if (userId) {
+      commandService.deleteCommand(id)
+        .then(response => {
+          if (response && response.success) {
+            toast({
+              title: "Comanda eliminada",
+              description: "La comanda ha sido eliminada del servidor.",
+            });
+          } else {
+            toast({
+              title: "Error",
+              description: "No se pudo eliminar la comanda del servidor. Se ha eliminado localmente.",
+              variant: "destructive",
+            });
+          }
+        })
+        .catch(error => {
+          console.error("Error deleting command:", error);
+          toast({
+            title: "Error",
+            description: "No se pudo eliminar la comanda del servidor. Se ha eliminado localmente.",
+            variant: "destructive",
+          });
+        });
+    } else {
+      toast({
+        title: "Comanda eliminada",
+        description: "La comanda ha sido eliminada de la vista previa.",
+      });
+    }
   };
 
-  // Genera y descarga el archivo Excel.
+  // Genera y descarga el archivo Excel
   const handleGenerateExcel = () => {
     if (commands.length === 0) {
       toast({
@@ -250,10 +368,41 @@ const Demo = () => {
   const saveCommand = () => {
     if (!currentCommandId) return;
     
-    toast({
-      title: "Cambios guardados",
-      description: "Los cambios han sido guardados localmente.",
-    });
+    const commandToUpdate = commands.find(cmd => cmd.id === currentCommandId);
+    if (!commandToUpdate) return;
+    
+    // Save to backend
+    if (userId) {
+      commandService.updateCommand(currentCommandId, commandToUpdate)
+        .then(response => {
+          if (response && response.success) {
+            toast({
+              title: "Cambios guardados",
+              description: "Los cambios han sido guardados exitosamente.",
+            });
+          } else {
+            toast({
+              title: "Error",
+              description: "No se pudieron guardar los cambios. Inténtalo de nuevo.",
+              variant: "destructive",
+            });
+          }
+        })
+        .catch(error => {
+          console.error("Error saving command:", error);
+          toast({
+            title: "Error",
+            description: "No se pudieron guardar los cambios. Inténtalo de nuevo.",
+            variant: "destructive",
+          });
+        });
+    } else {
+      // If no userId (local mode), just show a toast
+      toast({
+        title: "Cambios guardados",
+        description: "Los cambios han sido guardados localmente.",
+      });
+    }
   };
 
   const toggleEditMode = (commandId: string) => {
