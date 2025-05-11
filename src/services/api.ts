@@ -2,7 +2,9 @@ import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 
 // Supabase client initialization
-const supabaseUrl = 'https://jcvhlqkkfnxniqxgxucm.supabase.co';
+const supabaseUrl = 'https://hvuyfhqufioxxpksixy.supabase.co';
+// IMPORTANTE: Esta clave debe ser actualizada desde el panel de Supabase (Project Settings > API)
+// La clave actual corresponde al proyecto anterior
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpjdmhscWtrZm54bmlxeGd4dWNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDI4MjE0MTcsImV4cCI6MjAxODM5NzQxN30.pDYfbIXJDshomzA3-XVphtUg3xPEbMGiKFJVOkE9CYE';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -116,8 +118,12 @@ export const commandService = {
         
       if (error) throw error;
       return data;
-    } catch (error) {
-      console.error('Error fetching user commands:', error);
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message.includes('Failed to fetch')) {
+        console.error('Error de conectividad con Supabase: No se pudo resolver el dominio. Verifica tu conexión a internet o si el proyecto Supabase sigue activo.');
+      } else {
+        console.error('Error fetching user commands:', error);
+      }
       throw error;
     }
   },
@@ -190,8 +196,12 @@ export const commandService = {
         
       if (error) throw error;
       return data;
-    } catch (error) {
-      console.error('Error fetching user commands:', error);
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message.includes('Failed to fetch')) {
+        console.error('Error de conectividad con Supabase: No se pudo resolver el dominio. Verifica tu conexión a internet o si el proyecto Supabase sigue activo.');
+      } else {
+        console.error('Error fetching user commands:', error);
+      }
       throw error;
     }
   },
