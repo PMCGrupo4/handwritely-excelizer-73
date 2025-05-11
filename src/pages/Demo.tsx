@@ -68,7 +68,6 @@ const Demo = () => {
       }
     } catch (error) {
       console.error("Error loading commands:", error);
- 
     } finally {
       setIsProcessing(false);
     }
@@ -139,7 +138,6 @@ const Demo = () => {
   // Procesa la imagen con el backend en lugar de Tesseract.js local
   const processImageWithOCR = async (): Promise<CommandTableRow[]> => {
     if (!uploadedImage) {
- 
       return [];
     }
   
@@ -165,13 +163,10 @@ const Demo = () => {
           console.log("Texto detectado por OCR (desde backend):", response.data.rawText);
           return parseCommandText(response.data.rawText);
         }
-  
-
         return [];
       }
     } catch (error) {
       console.error("Error en OCR (backend):", error);
-
       return [];
     } finally {
       setIsProcessing(false);
@@ -220,7 +215,6 @@ const Demo = () => {
         });
       } catch (error) {
         console.error("Error saving new command:", error);
-
       }
     } else {
       toast({
@@ -243,21 +237,10 @@ const Demo = () => {
               title: "Comanda eliminada",
               description: "La comanda ha sido eliminada del servidor.",
             });
-          } else {
-            toast({
-              title: "Error",
-              description: "No se pudo eliminar la comanda del servidor. Se ha eliminado localmente.",
-              variant: "destructive",
-            });
           }
         })
         .catch(error => {
           console.error("Error deleting command:", error);
-          toast({
-            title: "Error",
-            description: "No se pudo eliminar la comanda del servidor. Se ha eliminado localmente.",
-            variant: "destructive",
-          });
         });
     } else {
       toast({
@@ -360,13 +343,10 @@ const Demo = () => {
               title: "Cambios guardados",
               description: "Los cambios han sido guardados exitosamente.",
             });
-          } else {
-      ;
           }
         })
         .catch(error => {
           console.error("Error saving command:", error);
-
         });
     } else {
       // If no userId (local mode), just show a toast
